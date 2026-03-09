@@ -76,9 +76,9 @@
     </div>
 
     <div id="loading-overlay">
-        <h2>남양주 로드뷰를 불러오는 중입니다...🚗</h2>
+        <h2 id="loading-title">남양주 로드뷰를 불러오는 중입니다...🚗</h2>
         <div class="spinner" id="spinner"></div>
-        <p style="margin-top: 15px; color: #aaa;">선별된 50개의 좌표 데이터를 카카오맵으로 탐색합니다.</p>
+        <p id="loading-desc" style="margin-top: 15px; color: #aaa;">선별된 50개의 좌표 데이터를 카카오맵으로 탐색합니다.</p>
     </div>
 
     <div id="pano"></div>
@@ -116,10 +116,23 @@
         </div>
     </div>
 
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=cd11ba5a6c4101803585670117288466&libraries=services"></script>
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=cd11ba5a6c4101803585670117288466&libraries=services&autoload=false" onerror="showKakaoError()"></script>
 
     <script>
-        // 지정 좌표 50개 
+        // 네트워크 차단 시 화면에 띄울 강력한 경고문
+        function showKakaoError() {
+            document.getElementById("spinner").style.display = "none";
+            document.getElementById("loading-title").innerHTML = "🚨 카카오맵 로딩 차단됨";
+            document.getElementById("loading-title").style.color = "#ff5555";
+            document.getElementById("loading-desc").innerHTML = `
+                현재 브라우저의 <b>'추적 방지'</b> 또는 <b>'광고 차단(AdBlock)'</b> 기능이 지도를 막고 있습니다.<br><br>
+                1. 주소창 왼쪽 자물쇠/방패 아이콘을 눌러 추적 방지를 꺼주세요.<br>
+                2. 또는 스마트폰으로 접속하시면 정상 작동합니다.
+            `;
+            document.getElementById("loading-desc").style.color = "#fff";
+            document.getElementById("loading-desc").style.lineHeight = "1.8";
+        }
+
         const RAW_COORDS_DATA = `
 37.6009416	127.178075
 37.6363143	127.216264
@@ -185,7 +198,19 @@
         let totalScore = 0;
 
         window.onload = function() {
-            // 좌표 데이터 파싱
+            // 카카오맵 객체가 아예 생성조차 안 되었다면 즉시 에러 표시 후 중단
+            if (typeof kakao === 'undefined') {
+                showKakaoError();
+                return;
+            }
+
+            // 카카오맵 코어가 100% 준비되었을 때만 게임 초기화 실행
+            kakao.maps.load(function() {
+                initGame();
+            });
+        };
+
+        function initGame() {
             const lines = RAW_COORDS_DATA.trim().split('\n');
             for (let i = 0; i < lines.length; i++) {
                 const parts = lines[i].trim().split(/\s+/);
@@ -194,7 +219,6 @@
                 }
             }
 
-            // 카카오맵 및 로드뷰 객체 초기화
             rv = new kakao.maps.Roadview(document.getElementById('pano'));
             rvClient = new kakao.maps.RoadviewClient();
             geocoder = new kakao.maps.services.Geocoder();
@@ -205,13 +229,11 @@
                 level: 8
             });
 
-            // 지도 클릭 이벤트 (남양주 경계 필터링 내장)
             kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
                 const latlng = mouseEvent.latLng;
                 const lat = latlng.getLat();
                 const lng = latlng.getLng();
 
-                // 남양주시 대략적 Bounding Box (위도/경도 이탈 시 경고)
                 if (lat < 37.514 || lat > 37.760 || lng < 127.110 || lng > 127.380) {
                     alert("남양주시 내부를 클릭해주세요!");
                     return;
@@ -226,7 +248,6 @@
                 }
             });
 
-            // 버튼 이벤트 연결
             document.getElementById("guess-btn").addEventListener("click", calculateScore);
             document.getElementById("skip-btn").addEventListener("click", () => {
                 document.getElementById("map-ui").style.display = "none";
@@ -238,7 +259,7 @@
             });
 
             startRound();
-        };
+        }
 
         function startRound() {
             document.getElementById("round-text").innerText = `${currentRound} / ${MAX_ROUNDS}`;
@@ -262,14 +283,12 @@
             const randomData = TARGET_COORDS[Math.floor(Math.random() * TARGET_COORDS.length)];
             const position = new kakao.maps.LatLng(randomData.lat, randomData.lng);
             
-            // 반경 50m 이내의 카카오 로드뷰 탐색
             rvClient.getNearestPanoId(position, 50, function(panoId) {
                 if (panoId === null) {
                     setTimeout(findValidStreetView, 50);
                     return;
                 }
 
-                // 주소 변환 (카카오 API는 lng, lat 순서로 요청)
                 geocoder.coord2Address(position.getLng(), position.getLat(), function(result, status) {
                     if (status === kakao.maps.services.Status.OK) {
                         actualAddress = result[0].address.address_name;
@@ -280,7 +299,6 @@
                         document.getElementById("loading-overlay").style.display = "none";
                         document.getElementById("map-ui").style.display = "block";
                         
-                        // 맵 리레이아웃
                         map.relayout();
                         map.setCenter(new kakao.maps.LatLng(37.636, 127.216));
                     } else {
@@ -290,9 +308,8 @@
             });
         }
 
-        // 자체 거리 계산 알고리즘 (하버사인 공식 - 오차 없는 정밀 계산)
         function computeDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; // 지구 반경 (미터)
+            const R = 6371e3; 
             const p1 = lat1 * Math.PI / 180;
             const p2 = lat2 * Math.PI / 180;
             const dp = (lat2 - lat1) * Math.PI / 180;
@@ -329,7 +346,6 @@
                 nextBtn.onclick = () => { document.getElementById("result-overlay").style.display = "none"; showFinalScore(); };
             }
 
-            // 결과창 UI를 먼저 표시
             document.getElementById("result-overlay").style.display = "flex";
             document.getElementById("map-ui").style.display = "none";
 
@@ -366,13 +382,11 @@
                 level: 5
             });
 
-            // 내 마커와 실제 마커 생성
             const guessM = new kakao.maps.Marker({ position: guess });
             const actualM = new kakao.maps.Marker({ position: actual });
             guessM.setMap(resultMap);
             actualM.setMap(resultMap);
 
-            // 두 점을 연결하는 폴리라인
             const polyline = new kakao.maps.Polyline({
                 path: [guess, actual],
                 strokeWeight: 4,
@@ -382,7 +396,6 @@
             });
             polyline.setMap(resultMap);
 
-            // 두 점이 모두 화면에 들어오도록 카메라 줌/이동
             const bounds = new kakao.maps.LatLngBounds();
             bounds.extend(guess);
             bounds.extend(actual);
