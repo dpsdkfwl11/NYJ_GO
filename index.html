@@ -5,20 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <script>
   /* 첫 화면 인트로를 틀지 먼저 정한다(본문이 잠깐 보였다 덮이는 깜빡임 방지).
-     생략: 움직임 줄이기 설정 · 가벼운 화면 · 같은 탭에서 이미 봄 · 점검용 캡처. 강제 재생: ?intro=1 */
+     생략: 움직임 줄이기 설정 · 가벼운 화면 · 점검용 캡처. 열 때(새로고침 포함)마다 재생. ?intro=1 은 위 설정과 관계없이 강제 재생 */
   (function () {
     try {
       var q = new URLSearchParams(location.search);
       if (q.has('shot') || q.has('bare') || q.has('cam')) return;
       var force = q.get('intro') === '1';
       var rm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var lite = false, seen = false;
+      var lite = false;
       try { lite = localStorage.getItem('street-q') === 'off'; } catch (e) {}
-      try { seen = sessionStorage.getItem('vf-intro') === '1'; } catch (e) {}
-      if (force || (!rm && !lite && !seen)) {
-        document.documentElement.classList.add('intro-on');
-        try { sessionStorage.setItem('vf-intro', '1'); } catch (e) {}
-      }
+      if (force || (!rm && !lite)) document.documentElement.classList.add('intro-on');
     } catch (e) {}
   })();
 </script>
