@@ -32,36 +32,50 @@
     el.classList.add(c);
   };
 
-  // ── 시간표 (초) ──
+  // ── 시간표 (초) ── 단계마다 눈에 들어올 만큼 머문다 (전체 약 4.5초)
+  const C0 = 1.3; // 1분 타임랩스 시작
+  const C1 = 2.9; // 끝 (1.6초 동안)
+  const gauge = el.querySelector('.vf-gauge i');
+  const gaugeTxt = el.querySelector('.vf-gauge b');
+  const easeInOut = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
   let counting = false;
   const steps = [
     [0.0, () => add('boot')],
-    [0.32, () => add('focus')],
-    [0.6, () => add('lock')],
-    [0.78, () => { // 1차 셔터
+    [0.45, () => add('focus')],
+    [0.85, () => add('lock')],
+    [1.05, () => { // 1차 셔터
       restart('f1');
       restart('kick');
       chips[0].classList.add('on');
       el.querySelector('.vf-live').textContent = '첫 번째 사진 촬영, 14시 2분 10초';
     }],
-    [0.9, () => {
+    [C0, () => {
       counting = true;
       add('count');
     }],
-    [1.62, () => {
+    [C1, () => {
       counting = false;
-      show(71);
+      setCount(1);
       okEl.classList.add('on');
+      add('reached');
     }],
-    [1.72, () => { // 2차 셔터 (1차와 0.94초 간격)
+    [3.3, () => { // 2차 셔터 (1차와 2.25초 간격)
       restart('f2');
+      restart('kick');
       shotEl.textContent = '2 / 2';
       chips[1].classList.add('on');
       el.querySelector('.vf-live').textContent = '1분 뒤 두 번째 사진 촬영, 14시 3분 11초';
     }],
-    [1.8, () => add('develop')],
-    [2.65, () => end(false)],
+    [3.65, () => add('develop')],
+    [4.8, () => end(false)],
   ];
+  function setCount(p) {
+    const e = easeInOut(p);
+    const sec = Math.round(61 * e);
+    show(10 + sec); // 14:02:10 → 14:03:11
+    gauge.style.transform = `scaleX(${e})`;
+    gaugeTxt.textContent = `+${Math.floor(sec / 60)}:${pad(sec % 60)}`;
+  }
 
   let t0 = 0;
   let next = 0;
@@ -73,10 +87,7 @@
     const t = AT != null ? AT : (now - t0) / 1000;
     const last = AT != null ? steps.length - 1 : steps.length; // 점검 모드는 끝내지 않고 그 순간에 멈춤
     while (next < last && steps[next][0] <= t) steps[next++][1]();
-    if (counting) {
-      const p = Math.min(1, Math.max(0, (t - 0.9) / 0.7));
-      show(10 + Math.round(61 * easeOut(p))); // 14:02:10 → 14:03:11
-    }
+    if (counting) setCount(Math.min(1, Math.max(0, (t - C0) / (C1 - C0))));
     if (AT != null) return;
     raf = requestAnimationFrame(tick);
   }
