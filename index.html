@@ -1,406 +1,600 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>남양주 로드뷰 챌린지 - 카카오맵 끝판왕 에디션</title>
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Malgun Gothic', sans-serif; overflow: hidden; }
-        #pano { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
-        
-        #status-bar {
-            position: absolute; top: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.75);
-            color: white; padding: 15px 0; text-align: center; font-size: 20px; font-weight: bold;
-            z-index: 10; display: flex; justify-content: center; gap: 40px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        .highlight { color: #FFD700; }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>불법주정차 주민신고 — 잠깐 세운 그 차, 누군가의 길을 막고 있습니다</title>
+<meta name="description" content="소화전, 교차로 모퉁이, 버스정류소, 횡단보도, 어린이보호구역, 인도. 이 여섯 곳의 불법주정차는 안전신문고 앱에서 사진 두 장으로 누구나 신고할 수 있습니다." />
+<meta name="theme-color" content="#191714" />
+<!-- 공유 미리보기(카카오톡·문자·SNS). 실제 주소에 올린 뒤 og:url 과 og:image 를 전체 주소(https://…)로 바꿔 주세요. -->
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="ko_KR" />
+<meta property="og:title" content="잠깐 세운 그 차, 누군가의 길을 막고 있습니다" />
+<meta property="og:description" content="불법주정차 주민신고 6곳 — 안전신문고 앱에서 1분 간격 사진 두 장으로 신고하세요." />
+<meta property="og:image" content="https://dpsdkfwl11.github.io/NYJ_GO/img/og.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:url" content="https://dpsdkfwl11.github.io/NYJ_GO/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="img/icon-180.png" />
+<link rel="preload" href="fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin />
+<style>
+  @font-face {
+    font-family: "Pretendard";
+    src: url("fonts/PretendardVariable.woff2") format("woff2-variations"), url("fonts/PretendardVariable.woff2") format("woff2");
+    font-weight: 100 900;
+    font-display: swap;
+  }
+  :root {
+    --ink: #1b1916;
+    --ink-2: #4a453e;
+    --ink-3: #6b645a;
+    --paper: #f6f1e7;
+    --paper-2: #ece5d6;
+    --line: #d8cfbd;
+    --signal: #c23a22;
+    --signal-dark: #a32f1a;
+    --school: #8a6500;
+    --night: #191714;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+    --font: "Pretendard", "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--night);
+    color: var(--ink);
+    font-family: var(--font);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: rgba(194, 58, 34, 0.15);
+  }
+  [id] { scroll-margin-top: 0; }
+  .sr-only {
+    position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+  .skip {
+    position: fixed; left: 12px; top: -60px; z-index: 50;
+    background: #fff; color: var(--ink); font-weight: 800; padding: 12px 16px; border-radius: 4px;
+    text-decoration: none;
+  }
+  .skip:focus { top: calc(12px + var(--safe-t)); }
 
-        #map-ui {
-            position: absolute; bottom: 25px; right: 25px; z-index: 10;
-            width: 360px; background: rgba(255, 255, 255, 0.95); padding: 18px;
-            border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            transition: transform 0.3s ease; backdrop-filter: blur(5px);
-        }
-        #map-ui:hover { transform: scale(1.02); }
-        #map { width: 100%; height: 260px; background-color: #eee; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ddd; }
-        
-        .btn-group { display: flex; gap: 10px; }
-        button {
-            padding: 15px; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold;
-            cursor: pointer; transition: background-color 0.2s, transform 0.1s; flex: 1;
-        }
-        button:active { transform: scale(0.98); }
-        button:disabled { background-color: #cccccc !important; cursor: not-allowed; color: #666; }
-        
-        #guess-btn { background-color: #4285F4; }
-        #guess-btn:hover { background-color: #3367D6; }
-        #skip-btn { background-color: #FF9800; flex: 0.5; }
-        #skip-btn:hover { background-color: #F57C00; }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; background: #e9c7a0; }
+  .still { position: fixed; inset: 0; z-index: 0; display: none; background: #e9c7a0; }
+  .still img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.5s; }
+  .still img.in { opacity: 1; }
+  .no3d #scene { display: none; }
+  .no3d .still { display: block; }
+  .shade {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: linear-gradient(90deg, rgba(25, 23, 20, 0.78) 0%, rgba(25, 23, 20, 0.42) 34%, rgba(25, 23, 20, 0) 56%);
+    transition: opacity 0.6s;
+  }
+  body:not(.at-hero) .shade { opacity: 0.35; }
+  main { position: relative; z-index: 2; }
 
-        #loading-overlay {
-            display: flex; position: absolute; top: 0; left: 0; z-index: 30;
-            width: 100%; height: 100%; background: #222;
-            color: white; flex-direction: column; justify-content: center; align-items: center;
-        }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #4CAF50; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-top: 20px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  /* 위 띠 */
+  .top {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 5;
+    display: flex; align-items: center; gap: 14px;
+    padding: calc(12px + var(--safe-t)) calc(28px + var(--safe-r)) 22px calc(28px + var(--safe-l));
+    color: #fff;
+    background: linear-gradient(rgba(25, 23, 20, 0.62), rgba(25, 23, 20, 0));
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; letter-spacing: -0.02em; color: #fff; text-decoration: none; min-height: 44px; }
+  .brand svg { width: 26px; height: 26px; flex: none; }
+  .top nav { margin-left: auto; display: flex; align-items: center; gap: 4px; font-size: 14px; }
+  .top nav a { color: #fff; text-decoration: none; padding: 10px 10px; border-radius: 3px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+  .top nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .top nav a.go { color: var(--ink); background: var(--paper); font-weight: 750; text-shadow: none; margin-left: 6px; padding: 10px 14px; }
+  .top nav a.go:hover { text-decoration: none; background: #fff; }
+  .tools { display: flex; gap: 6px; margin-left: 4px; }
+  .tool {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-width: 44px; min-height: 44px; padding: 0 12px; border-radius: 3px;
+    border: 0; background: rgba(25, 23, 20, 0.55); color: #fff; font: inherit; font-size: 13px; font-weight: 650;
+    cursor: pointer; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  }
+  .tool:hover { background: rgba(25, 23, 20, 0.75); }
+  .tool svg { width: 18px; height: 18px; flex: none; }
+  .tool .lbl { white-space: nowrap; }
 
-        #result-overlay, #final-overlay {
-            display: none; position: absolute; top: 0; left: 0; z-index: 20;
-            width: 100%; height: 100%; background: rgba(0,0,0,0.88);
-            color: white; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
-        }
-        .result-card, .final-card {
-            background: #2c2c2c; padding: 40px; border-radius: 20px; 
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6); text-align: center;
-            max-width: 600px; width: 100%; border: 1px solid #444;
-        }
-        h1 { margin-top: 0; color: #4CAF50; font-size: 36px; margin-bottom: 10px; }
-        .score-box { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; display: inline-block; margin-top: 10px; }
-        #address-text { font-size: 16px; color: #aaa; margin-top: 15px; font-style: italic; }
-        #result-map { width: 100%; height: 300px; background-color: #eee; border-radius: 10px; margin-top: 25px; border: 1px solid #444; }
-        
-        .action-btn { margin-top: 30px; background-color: #4CAF50; width: auto; padding: 15px 50px; font-size: 18px; }
-        .action-btn:hover { background-color: #45a049; }
-        
-        .final-card h1 { color: #FFD700; font-size: 42px; }
-        .final-score { font-size: 60px; font-weight: bold; color: #fff; margin: 20px 0; }
-        .rank-text { font-size: 24px; color: #4CAF50; font-weight: bold; }
-    </style>
+  /* 아래 본문(종이색)으로 내려오면 위 띠도 밝게 */
+  .past .top { background: rgba(246, 241, 231, 0.95); color: var(--ink); box-shadow: 0 1px 0 var(--line); padding-bottom: 10px; }
+  .past .brand, .past .top nav a { color: var(--ink); text-shadow: none; }
+  .past .top nav a.go { background: var(--signal); color: #fff; }
+  .past .tool { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+  .past .rail { display: none; }
+  .top { transition: background 0.25s, color 0.25s; }
+  /* 첫 화면 */
+  .hero { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: 110px calc(32px + var(--safe-r)) 80px calc(32px + var(--safe-l)); color: #fff; }
+  .hero-in { max-width: 640px; }
+  .kicker { font-size: 14px; font-weight: 700; letter-spacing: 0.02em; color: #f6d3b8; margin: 0 0 18px; }
+  .kicker span { display: inline-block; width: 28px; height: 2px; background: currentColor; vertical-align: middle; margin-right: 10px; }
+  h1 { margin: 0 0 22px; font-size: clamp(36px, 6.2vw, 76px); line-height: 1.12; letter-spacing: -0.045em; font-weight: 850; }
+  h1 .hl { color: #ffb896; }
+  .lead { font-size: clamp(16px, 1.55vw, 19px); color: rgba(255, 255, 255, 0.92); margin: 0 0 30px; max-width: 34em; }
+  .btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 48px; padding: 12px 22px; border-radius: 3px;
+    font-weight: 750; font-size: 16px; text-decoration: none; border: 0; cursor: pointer; font-family: inherit;
+    color: #fff; background: var(--signal);
+    transition: background 0.15s;
+  }
+  .btn:hover { background: var(--signal-dark); }
+  .btn svg { width: 18px; height: 18px; }
+  .btn.line { background: rgba(25, 23, 20, 0.35); color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.8); }
+  .btn.line:hover { background: rgba(25, 23, 20, 0.55); }
+  .hero-foot { margin-top: 52px; display: flex; gap: 28px; font-size: 14px; color: rgba(255, 255, 255, 0.85); }
+  .hero-foot b { display: block; font-size: 26px; color: #fff; font-weight: 800; letter-spacing: -0.03em; }
+
+  /* 장면 카드 */
+  .step { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: 110px calc(32px + var(--safe-r)) 80px calc(32px + var(--safe-l)); }
+  .card {
+    width: min(440px, 100%);
+    background: var(--paper);
+    border-radius: 4px;
+    padding: 0 0 22px;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 18px 40px -12px rgba(0, 0, 0, 0.45);
+    transform: translateY(18px);
+    opacity: 0.55;
+    transition: transform 0.55s cubic-bezier(.2,.8,.2,1), opacity 0.55s;
+    overflow: hidden;
+  }
+  .step.is-on .card, .card:focus-within { transform: none; opacity: 1; }
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 8px 10px 8px 24px; border-bottom: 1px solid var(--paper-2);
+    font-size: 13px; color: var(--ink-3); font-weight: 650;
+  }
+  .card-head b { font-size: 13px; color: var(--signal); font-weight: 800; letter-spacing: 0.03em; }
+  .card-head .meta { display: flex; align-items: center; gap: 4px; }
+  .share {
+    display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 10px;
+    border: 0; border-radius: 3px; background: transparent; color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .share:hover { background: var(--paper-2); }
+  .share svg { width: 16px; height: 16px; }
+  .card-body { padding: 16px 24px 0; }
+  .card h2 { margin: 0 0 4px; font-size: clamp(25px, 2.6vw, 32px); line-height: 1.25; letter-spacing: -0.035em; font-weight: 850; }
+  .card .dist { display: inline-block; margin: 2px 0 12px; font-size: 15px; font-weight: 800; color: var(--signal); }
+  .card p { margin: 0 0 14px; color: var(--ink-2); font-size: 15.5px; }
+  .card .note { margin: 14px 0 0; padding: 12px 14px; background: var(--paper-2); border-radius: 3px; font-size: 14px; color: var(--ink-2); }
+  .card .note strong { color: var(--ink); }
+  .card .fine {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 6px 10px; flex-wrap: wrap;
+    margin: 4px 0 0; padding: 11px 14px; border-radius: 3px; background: var(--signal); color: #fff; font-size: 15px;
+  }
+  .card .fine b { font-weight: 800; }
+  .card .fine span { font-size: 14px; }
+  .school .card-head b, .school .card .dist { color: var(--school); }
+
+  /* 장면 번호(넓은 화면) */
+  .rail { position: fixed; right: calc(22px + var(--safe-r)); top: 50%; transform: translateY(-50%); z-index: 5; display: flex; flex-direction: column; gap: 2px; font-size: 12px; font-weight: 700; }
+  .rail a { color: rgba(255, 255, 255, 0.75); text-decoration: none; text-align: right; padding: 5px 0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
+  .rail a::after { content: ""; width: 14px; height: 2px; background: currentColor; transition: width 0.25s; }
+  .rail a span { opacity: 0; transition: opacity 0.25s; }
+  .rail a.is-on { color: #fff; }
+  .rail a.is-on::after { width: 30px; background: #ffb896; }
+  .rail a.is-on span, .rail a:hover span, .rail a:focus-visible span { opacity: 1; }
+
+  /* 아래 본문 공통 */
+  .sec { background: var(--paper); padding: 100px calc(32px + var(--safe-r)) 90px calc(32px + var(--safe-l)); }
+  .sec-in { max-width: 1100px; margin: 0 auto; }
+  .sec-title { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: end; margin-bottom: 48px; }
+  .sec-title h2 { margin: 0; font-size: clamp(30px, 4vw, 50px); line-height: 1.15; letter-spacing: -0.045em; font-weight: 850; }
+  .sec-title p { margin: 0; color: var(--ink-2); font-size: 17px; }
+
+  /* 신고 방법 */
+  .how-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; }
+  .steps { list-style: none; margin: 0; padding: 0; }
+  .steps li { display: grid; grid-template-columns: 56px 1fr; gap: 6px 16px; padding: 24px 0; border-top: 1px solid var(--line); }
+  .steps li:last-child { border-bottom: 1px solid var(--line); }
+  .steps .n { font-size: 40px; font-weight: 850; line-height: 1; color: var(--signal); letter-spacing: -0.04em; }
+  .steps h3 { margin: 2px 0 6px; font-size: 20px; letter-spacing: -0.03em; }
+  .steps p { margin: 0; color: var(--ink-2); font-size: 15.5px; }
+  .phone { width: 300px; max-width: 100%; height: 610px; margin: 0 auto; border-radius: 46px; padding: 12px; background: #111; position: relative; box-shadow: 0 30px 60px -20px rgba(60, 40, 20, 0.45), inset 0 0 0 2px #333; }
+  .phone::before { content: ""; position: absolute; top: 22px; left: 50%; width: 86px; height: 24px; margin-left: -43px; border-radius: 14px; background: #111; z-index: 2; }
+  .screen { height: 100%; border-radius: 36px; overflow: hidden; background: #f3f4f6; display: flex; flex-direction: column; font-size: 13px; color: #111; }
+  .app-bar { padding: 52px 18px 12px; background: #fff; border-bottom: 1px solid #e5e7eb; font-weight: 800; font-size: 15px; }
+  .app-body { padding: 14px; display: grid; gap: 10px; }
+  .field { background: #fff; border-radius: 10px; padding: 10px 12px; border: 1px solid #e5e7eb; }
+  .field small { display: block; color: #4b5563; font-size: 11px; }
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .shot { aspect-ratio: 3 / 4; border-radius: 8px; position: relative; overflow: hidden; background: #ddd center / cover; }
+  .shot .t { position: absolute; left: 6px; top: 6px; font-size: 10px; font-weight: 800; color: #fff; background: rgba(0, 0, 0, 0.65); padding: 2px 6px; border-radius: 4px; }
+  .shot .ts { position: absolute; right: 6px; bottom: 6px; font-size: 10px; font-weight: 700; color: #fff; background: rgba(0, 0, 0, 0.65); padding: 1px 5px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+  .shot.second { animation: appear 6s infinite; }
+  @keyframes appear { 0%, 45% { opacity: 0.2; filter: grayscale(1); } 55%, 100% { opacity: 1; filter: none; } }
+  .timer { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 10px; padding: 10px 12px; border: 1px solid #e5e7eb; }
+  .ring { width: 32px; height: 32px; border-radius: 50%; background: conic-gradient(var(--signal) var(--p, 0%), #e5e7eb 0); position: relative; animation: ring 6s linear infinite; flex: none; }
+  .ring::after { content: ""; position: absolute; inset: 5px; background: #fff; border-radius: 50%; }
+  @property --p { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+  @keyframes ring { 0% { --p: 0%; } 50%, 100% { --p: 100%; } }
+  .timer small { display: block; color: #4b5563; font-size: 11px; }
+  .submit { text-align: center; padding: 12px; border-radius: 10px; background: var(--signal); color: #fff; font-weight: 800; }
+  .paused .shot.second, .paused .ring { animation-play-state: paused; }
+
+  /* 확인할 점 */
+  .check { padding-top: 20px; }
+  .check-in { display: grid; grid-template-columns: 1fr 1.4fr; gap: 56px; }
+  .check h2 { margin: 0 0 14px; font-size: clamp(28px, 3vw, 38px); letter-spacing: -0.04em; line-height: 1.2; font-weight: 850; }
+  .check-list { margin: 0; padding: 0; list-style: none; }
+  .check-list li { padding: 14px 0 14px 34px; border-top: 1px solid var(--line); position: relative; color: var(--ink-2); }
+  .check-list li::before { content: ""; position: absolute; left: 2px; top: 19px; width: 16px; height: 16px; border: 2px solid var(--ink); border-radius: 2px; }
+  .check-list li::after { content: ""; position: absolute; left: 7px; top: 21px; width: 5px; height: 9px; border: solid var(--signal); border-width: 0 3px 3px 0; transform: rotate(45deg); }
+  .check-list b { color: var(--ink); }
+  details { border-top: 1px solid var(--line); }
+  details:last-of-type { border-bottom: 1px solid var(--line); }
+  summary { cursor: pointer; list-style: none; padding: 16px 0; min-height: 48px; font-weight: 750; font-size: 17px; display: flex; justify-content: space-between; align-items: center; gap: 12px; letter-spacing: -0.02em; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; font-size: 24px; line-height: 1; color: var(--ink-3); flex: none; }
+  details[open] summary::after { content: "−"; }
+  details p { margin: 0 0 18px; color: var(--ink-2); }
+
+  /* 퀴즈 */
+  .quiz { background: var(--paper-2); }
+  .quiz-card { display: grid; grid-template-columns: 1.1fr 1fr; gap: 0; background: var(--paper); border-radius: 6px; overflow: hidden; box-shadow: 0 20px 40px -24px rgba(60, 40, 20, 0.5); }
+  .q-media { position: relative; background: #cbbfa9; aspect-ratio: 4 / 3; }
+  .q-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .q-badge { position: absolute; left: 12px; top: 12px; background: rgba(25, 23, 20, 0.82); color: #fff; font-size: 14px; font-weight: 750; padding: 6px 10px; border-radius: 3px; }
+  .q-body { padding: 28px 28px 26px; display: flex; flex-direction: column; }
+  .q-no { margin: 0 0 8px; font-size: 13px; font-weight: 800; color: var(--signal); letter-spacing: 0.04em; }
+  .q-body h3 { margin: 0 0 22px; font-size: clamp(20px, 2.2vw, 25px); line-height: 1.4; letter-spacing: -0.03em; }
+  .q-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
+  .q-btns button {
+    min-height: 56px; border-radius: 4px; border: 2px solid var(--ink); background: #fff; color: var(--ink);
+    font: inherit; font-size: 16px; font-weight: 800; cursor: pointer;
+  }
+  .q-btns button:hover { background: var(--paper-2); }
+  .q-btns button[aria-pressed="true"].right { background: #2f6b4a; border-color: #2f6b4a; color: #fff; }
+  .q-btns button[aria-pressed="true"].wrong { background: var(--signal); border-color: var(--signal); color: #fff; }
+  .q-btns button:disabled { cursor: default; }
+  .q-result { margin-top: 16px; padding: 14px 16px; border-radius: 4px; background: var(--paper-2); }
+  .q-result b { display: block; font-size: 17px; margin-bottom: 4px; }
+  .q-result p { margin: 0 0 12px; color: var(--ink-2); font-size: 15px; }
+  .q-result .btn { min-height: 44px; padding: 10px 18px; font-size: 15px; }
+  .q-done { text-align: center; padding: 40px 24px; }
+  .q-done b { display: block; font-size: clamp(26px, 3vw, 34px); letter-spacing: -0.04em; margin-bottom: 8px; }
+  .q-done .btns { justify-content: center; margin-top: 18px; }
+  .q-done .btn.line2 { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+
+  /* 마무리 */
+  .final { background: var(--signal); color: #fff; padding: 84px calc(32px + var(--safe-r)) 84px calc(32px + var(--safe-l)); }
+  .final-in { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 30px; flex-wrap: wrap; }
+  .final h2 { margin: 0; font-size: clamp(30px, 4.2vw, 52px); letter-spacing: -0.045em; line-height: 1.15; font-weight: 850; }
+  .final p { margin: 10px 0 0; color: #fff; }
+  .final .btn { background: #fff; color: var(--ink); }
+  .final .btn:hover { background: var(--paper); }
+  footer { background: var(--night); color: rgba(255, 255, 255, 0.78); padding: 30px calc(32px + var(--safe-r)) calc(40px + var(--safe-b)) calc(32px + var(--safe-l)); font-size: 13px; }
+  footer .in { max-width: 1100px; margin: 0 auto; display: grid; gap: 10px; }
+  footer .row { display: flex; justify-content: space-between; gap: 8px 20px; flex-wrap: wrap; }
+  footer b { color: #fff; }
+  footer .verify { padding: 10px 12px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 3px; }
+
+  /* 알림 */
+  .toast {
+    position: fixed; left: 50%; bottom: calc(24px + var(--safe-b)); transform: translate(-50%, 20px); z-index: 60;
+    background: #1b1916; color: #fff; padding: 12px 18px; border-radius: 4px; font-weight: 700; font-size: 15px;
+    opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; max-width: calc(100% - 32px); text-align: center;
+  }
+  .toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+  /* 캡처용 */
+  .bare main, .bare .top, .bare .rail, .bare .shade, .bare .skip { display: none !important; }
+
+  :focus-visible { outline: 3px solid #f2b705; outline-offset: 3px; }
+
+  @media (max-width: 860px) {
+    .top { padding: calc(8px + var(--safe-t)) calc(12px + var(--safe-r)) 18px calc(14px + var(--safe-l)); gap: 6px; }
+    .brand { font-size: 15px; }
+    .top nav a:not(.go) { display: none; }
+    .top nav a.go { padding: 10px 12px; margin-left: 0; }
+    .tool { padding: 0; width: 44px; }
+    .tool .lbl { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+    .shade { background: linear-gradient(rgba(25, 23, 20, 0.1) 12%, rgba(25, 23, 20, 0.82) 52%) !important; opacity: 1 !important; }
+    .hero { align-items: flex-end; padding: 90px calc(18px + var(--safe-r)) calc(48px + var(--safe-b)) calc(18px + var(--safe-l)); }
+    .hero-foot { gap: 18px; margin-top: 36px; }
+    .hero-foot b { font-size: 22px; }
+    .btns .btn { flex: 1 1 auto; }
+    .step { align-items: flex-end; padding: 90px calc(12px + var(--safe-r)) calc(16px + var(--safe-b)) calc(12px + var(--safe-l)); }
+    .card { width: 100%; padding-bottom: 16px; opacity: 1; transform: none; }
+    .card-head { padding: 4px 6px 4px 18px; }
+    .card-body { padding: 12px 18px 0; }
+    .card h2 { font-size: 23px; }
+    .card .dist { margin-bottom: 8px; }
+    .card p { font-size: 15px; margin-bottom: 10px; line-height: 1.6; }
+    .card .note { font-size: 14px; padding: 10px 12px; margin-top: 10px; }
+    .rail { display: none; }
+    .sec { padding: 72px calc(18px + var(--safe-r)) 64px calc(18px + var(--safe-l)); }
+    .check { padding-top: 8px; }
+    .sec-title, .how-grid, .check-in { grid-template-columns: 1fr; gap: 22px; }
+    .sec-title { margin-bottom: 30px; }
+    .steps li { grid-template-columns: 44px 1fr; gap: 4px 12px; padding: 20px 0; }
+    .steps .n { font-size: 32px; }
+    .phone { width: 270px; height: 550px; }
+    .quiz-card { grid-template-columns: 1fr; }
+    .q-body { padding: 20px 18px 20px; }
+    .final { padding: 64px calc(18px + var(--safe-r)) 64px calc(18px + var(--safe-l)); }
+    .final .btn { width: 100%; }
+    footer { padding-left: calc(18px + var(--safe-l)); padding-right: calc(18px + var(--safe-r)); }
+  }
+  @media (max-width: 380px) {
+    .brand span.t { display: none; }
+    .hero-foot { gap: 12px; font-size: 13px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .card, .shade, .still img { transition: none; }
+    .shot.second, .ring { animation: none; }
+  }
+</style>
 </head>
-<body>
+<body class="at-hero">
+<a class="skip" href="#소화전">본문 바로가기</a>
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="still" id="still" aria-hidden="true"><img alt="" /></div>
+<div class="shade"></div>
 
-    <div id="status-bar" style="display: none;">
-        <div>라운드: <span id="round-text" class="highlight">1 / 10</span></div>
-        <div>총점: <span id="total-score-text" class="highlight">0점</span></div>
+<header class="top">
+  <a class="brand" href="#처음" aria-label="불법주정차 주민신고 처음으로">
+    <svg viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="3" fill="#c23a22" /><path d="M8 19V7h5.2c2.7 0 4.3 1.5 4.3 3.9s-1.6 3.9-4.3 3.9H10.6V19z M10.6 12.6h2.4c1.3 0 2-.6 2-1.7s-.7-1.7-2-1.7h-2.4z" fill="#fff" /></svg>
+    <span class="t">불법주정차 주민신고</span>
+  </a>
+  <nav aria-label="바로가기">
+    <a href="#소화전">신고 대상</a>
+    <a href="#신고방법">신고 방법</a>
+    <a href="#퀴즈">퀴즈</a>
+    <a class="go" href="https://www.safetyreport.go.kr" target="_blank" rel="noopener">안전신문고<span class="sr-only">(새 창)</span></a>
+  </nav>
+  <div class="tools">
+    <button class="tool" id="pauseBtn" type="button" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path class="i-pause" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" /><path class="i-play" d="M8 5v14l11-7z" style="display:none" /></svg>
+      <span class="lbl">움직임 멈춤</span>
+    </button>
+    <button class="tool" id="liteBtn" type="button" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z" /></svg>
+      <span class="lbl">가벼운 화면</span>
+    </button>
+  </div>
+</header>
+
+<nav class="rail" aria-label="장면 이동">
+  <a href="#소화전"><span>소화전</span>01</a>
+  <a href="#교차로"><span>교차로 모퉁이</span>02</a>
+  <a href="#버스정류소"><span>버스정류소</span>03</a>
+  <a href="#횡단보도"><span>횡단보도</span>04</a>
+  <a href="#어린이보호구역"><span>어린이보호구역</span>05</a>
+  <a href="#인도"><span>인도</span>06</a>
+</nav>
+
+<main>
+  <section class="hero step" id="처음" data-station="0" aria-labelledby="h-hero">
+    <div class="hero-in">
+      <p class="kicker"><span></span>시민이 직접 신고하는 불법주정차</p>
+      <h1 id="h-hero">잠깐 세운 그 차,<br /><span class="hl">누군가의 길</span>을<br />막고 있습니다</h1>
+      <p class="lead">소방차가 물을 대야 하는 소화전 앞, 아이들이 건너는 학교 앞 길. 이런 곳에 세운 차는 휴대폰 사진 두 장으로 누구나 신고할 수 있습니다.</p>
+      <div class="btns">
+        <a class="btn" href="#신고방법">신고 방법 보기
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg></a>
+        <a class="btn line" href="#소화전">어디가 신고 대상인가요</a>
+      </div>
+      <ul class="hero-foot" style="list-style:none;padding:0">
+        <li><b>6곳</b>주민신고 대상 장소</li>
+        <li><b>2장</b>1분 간격 사진</li>
+        <li><b>앱 하나</b>안전신문고</li>
+      </ul>
     </div>
+    <p class="sr-only">배경 그림: 해 질 녘의 시내 거리를 위에서 내려다본 모습입니다. 교차로, 상가, 초등학교, 버스정류소가 있습니다.</p>
+  </section>
 
-    <div id="loading-overlay">
-        <h2 id="loading-title">남양주 로드뷰를 불러오는 중입니다...🚗</h2>
-        <div class="spinner" id="spinner"></div>
-        <p id="loading-desc" style="margin-top: 15px; color: #aaa;">선별된 50개의 좌표 데이터를 카카오맵으로 탐색합니다.</p>
+  <section class="step" id="소화전" data-station="1" aria-labelledby="h1-1">
+    <div class="card">
+      <div class="card-head"><b>01 소화전</b><span class="meta">1 / 6<button class="share" type="button" data-share="소화전" data-text="소화전 주변 5m는 주정차 금지, 적색 연석은 과태료 2배입니다."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 3v12M7 8l5-5 5 5" /></svg>공유<span class="sr-only"> — 소화전 장면</span></button></span></div>
+      <div class="card-body">
+        <h2 id="h1-1">소화전 주변</h2>
+        <span class="dist">앞뒤 5m 이내</span>
+        <p>불이 나면 소방차는 가장 가까운 소화전에 호스를 연결합니다. 그 앞에 차 한 대가 서 있으면 다른 소화전을 찾아 다시 움직여야 합니다.</p>
+        <p class="fine"><b>적색 연석 구간은 과태료 2배</b><span>승용차 기준 8만 원</span></p>
+        <p class="note"><strong>이렇게 알아보세요</strong> — 연석과 도로 가장자리에 빨간 칠, 노면에 "소방시설 주정차금지" 표시가 있습니다.</p>
+      </div>
     </div>
+    <p class="sr-only">장면 설명: 흰 승용차가 빨간 연석이 칠해진 소화전 바로 앞에 비상등을 켜고 서 있습니다. 경광등을 켠 소방차가 도착하지만 승용차 뒤에 멈춰 소화전에 붙지 못하고, 소방관이 내려 손짓합니다. 소화전 앞뒤로 5미터 범위가 표시됩니다.</p>
+  </section>
 
-    <div id="pano"></div>
-
-    <div id="map-ui" style="display: none;">
-        <div style="margin-bottom: 12px; font-weight: bold; text-align: center; color: #333; font-size: 15px;">지도를 클릭해 현재 위치를 예상해 보세요!</div>
-        <div id="map"></div>
-        <div class="btn-group">
-            <button id="skip-btn" title="점수 차감 없이 다른 장소로 넘어갑니다">건너뛰기</button>
-            <button id="guess-btn" disabled>정답 제출</button>
-        </div>
+  <section class="step" id="교차로" data-station="2" aria-labelledby="h1-2">
+    <div class="card">
+      <div class="card-head"><b>02 교차로 모퉁이</b><span class="meta">2 / 6<button class="share" type="button" data-share="교차로" data-text="교차로 모퉁이 5m 이내는 주정차 금지입니다."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 3v12M7 8l5-5 5 5" /></svg>공유<span class="sr-only"> — 교차로 모퉁이 장면</span></button></span></div>
+      <div class="card-body">
+        <h2 id="h1-2">교차로 모퉁이</h2>
+        <span class="dist">연석이 꺾이는 모퉁이에서 5m 이내</span>
+        <p>모퉁이에 선 차는 옆 길에서 나오는 차와 건너려는 사람을 서로 보지 못하게 가립니다. 우회전하는 차가 보행자를 늦게 발견하게 됩니다.</p>
+        <p class="note"><strong>이렇게 알아보세요</strong> — 연석이 꺾이는 지점에서 두 길 방향으로 각각 5m 안쪽입니다.</p>
+      </div>
     </div>
+    <p class="sr-only">장면 설명: 교차로 모퉁이에 승용차가 서 있습니다. 우회전하던 차가 모퉁이 차에 가려져 있던 보행자를 늦게 보고 급정거합니다. 모퉁이에서 두 길 방향으로 각각 5미터가 표시됩니다.</p>
+  </section>
 
-    <div id="result-overlay">
-        <div class="result-card">
-            <h1 id="round-title">탐색 완료!</h1>
-            <p id="distance-text">오차 거리: 계산 중...</p>
-            <div class="score-box">
-                <span style="color: #FFD700; font-weight: bold; font-size: 24px;">획득 점수: </span>
-                <span id="score-text" style="color: #FFD700; font-weight: bold; font-size: 24px;">계산 중...</span>
+  <section class="step" id="버스정류소" data-station="3" aria-labelledby="h1-3">
+    <div class="card">
+      <div class="card-head"><b>03 버스정류소</b><span class="meta">3 / 6<button class="share" type="button" data-share="버스정류소" data-text="버스정류소 표지판 앞뒤 10m 이내는 주정차 금지입니다."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 3v12M7 8l5-5 5 5" /></svg>공유<span class="sr-only"> — 버스정류소 장면</span></button></span></div>
+      <div class="card-body">
+        <h2 id="h1-3">버스정류소</h2>
+        <span class="dist">표지판 기준 앞뒤 10m 이내</span>
+        <p>버스가 정류소에 붙지 못하면 승객은 차도 한가운데에서 타고 내립니다. 어르신과 휠체어 이용자에게는 그 한 걸음이 위험합니다.</p>
+        <p class="note"><strong>이렇게 알아보세요</strong> — 정류소 표지판이나 노면의 노란 "버스정류소" 표시를 기준으로 합니다.</p>
+      </div>
+    </div>
+    <p class="sr-only">장면 설명: 버스정류소 앞에 승용차가 서 있어 시내버스가 정류소에 붙지 못하고 둘째 차로에 멈춥니다. 문이 열리고 지팡이를 짚은 어르신이 차도로 내려 인도까지 걸어갑니다. 표지판 앞뒤로 10미터 범위가 표시됩니다.</p>
+  </section>
+
+  <section class="step" id="횡단보도" data-station="4" aria-labelledby="h1-4">
+    <div class="card">
+      <div class="card-head"><b>04 횡단보도</b><span class="meta">4 / 6<button class="share" type="button" data-share="횡단보도" data-text="정지선을 넘어 횡단보도에 걸친 차는 신고 대상입니다."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 3v12M7 8l5-5 5 5" /></svg>공유<span class="sr-only"> — 횡단보도 장면</span></button></span></div>
+      <div class="card-body">
+        <h2 id="h1-4">횡단보도</h2>
+        <span class="dist">정지선을 넘어 멈춘 차</span>
+        <p>정지선을 넘어 횡단보도에 걸친 차 때문에 건너던 사람이 차 사이로 돌아가야 합니다. 키가 작은 아이는 차에 가려 운전자 눈에 보이지 않습니다.</p>
+        <p class="note"><strong>이렇게 알아보세요</strong> — 횡단보도 앞 흰 정지선을 차가 넘어서 서 있으면 해당됩니다.</p>
+      </div>
+    </div>
+    <p class="sr-only">장면 설명: 승용차가 흰 정지선을 넘어 횡단보도 위에 서 있습니다. 건너던 어른 둘과 아이 하나가 차를 피해 비켜서 건넙니다. 넘은 정지선이 빨갛게 강조됩니다.</p>
+  </section>
+
+  <section class="step school" id="어린이보호구역" data-station="5" aria-labelledby="h1-5">
+    <div class="card">
+      <div class="card-head"><b>05 어린이보호구역</b><span class="meta">5 / 6<button class="share" type="button" data-share="어린이보호구역" data-text="초등학교 정문 앞 양방향 도로, 평일 08~20시는 주정차 금지입니다."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 3v12M7 8l5-5 5 5" /></svg>공유<span class="sr-only"> — 어린이보호구역 장면</span></button></span></div>
+      <div class="card-body">
+        <h2 id="h1-5">초등학교 앞<br />어린이보호구역</h2>
+        <span class="dist">초등학교 정문 앞 양방향 도로 · 평일 08~20시</span>
+        <p>등하굣길 아이들은 서 있는 차 사이에서 갑자기 길로 나옵니다. 아이 눈높이에서 주차된 승용차는 벽과 같습니다.</p>
+        <p class="note"><strong>기준은 표지판입니다</strong> — 어린이보호구역 안에서 초등학교 정문 앞 양방향 도로가 대상입니다. 붉은 노면이나 울타리가 없는 곳도 있으니 어린이보호구역 표지판을 먼저 확인하세요.</p>
+      </div>
+    </div>
+    <p class="sr-only">장면 설명: 초등학교 정문 앞 어린이보호구역 도로에 승용차가 서 있습니다. 노란 모자를 쓴 아이가 차 앞으로 뛰어나오고, 달려오던 차가 급정거합니다.</p>
+  </section>
+
+  <section class="step" id="인도" data-station="6" aria-labelledby="h1-6">
+    <div class="card">
+      <div class="card-head"><b>06 인도</b><span class="meta">6 / 6<button class="share" type="button" data-share="인도" data-text="인도(보도) 위 주정차는 신고 대상입니다."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 3v12M7 8l5-5 5 5" /></svg>공유<span class="sr-only"> — 인도 장면</span></button></span></div>
+      <div class="card-body">
+        <h2 id="h1-6">인도(보도) 위</h2>
+        <span class="dist">보도블록 위 전체</span>
+        <p>인도에 올라선 차를 피하려고 유모차와 휠체어가 차도로 내려갑니다. 점자블록을 따라 걷는 시각장애인에게는 길이 끊깁니다.</p>
+        <p class="note"><strong>이렇게 알아보세요</strong> — 바퀴 일부라도 보도블록 위에 올라가 있으면 해당됩니다.</p>
+      </div>
+    </div>
+    <p class="sr-only">장면 설명: 승용차가 보도블록 위에 올라서 있습니다. 휠체어가 차 앞에서 더 가지 못하고 멈추고, 유모차를 민 사람은 차도로 걸어갑니다.</p>
+  </section>
+
+  <section class="sec how" id="신고방법" aria-labelledby="h-how">
+    <div class="sec-in">
+      <div class="sec-title">
+        <h2 id="h-how">신고는<br />세 번이면 끝납니다</h2>
+        <p>안전신문고 앱에서 불법주정차 신고를 고르고, 같은 자리에서 1분 간격으로 두 번 찍어 보내면 됩니다.</p>
+      </div>
+      <div class="how-grid">
+        <ol class="steps">
+          <li><span class="n" aria-hidden="true">1</span><div><h3>앱에서 불법주정차 신고 선택</h3><p>안전신문고 앱을 열고 신고 유형에서 불법주정차를 고른 뒤, 소화전·교차로·버스정류소 등 위반 장소를 선택합니다.</p></div></li>
+          <li><span class="n" aria-hidden="true">2</span><div><h3>같은 자리에서 1분 간격으로 두 번 촬영</h3><p>차량 번호와 위반 장소가 한 장에 같이 나오게 찍습니다. 앱 카메라로 찍어야 촬영 시각과 위치가 기록됩니다.</p></div></li>
+          <li><span class="n" aria-hidden="true">3</span><div><h3>위치 확인 후 제출</h3><p>위치는 자동으로 들어갑니다. 제출하면 담당 부서가 검토하고, 처리 결과를 앱으로 알려 드립니다.</p></div></li>
+        </ol>
+        <div class="phone" role="img" aria-label="안전신문고 앱 신고 화면 예시: 위반 장소 소화전 주변 5m 이내, 14시 2분과 14시 3분에 찍은 사진 두 장, 현재 위치 자동 입력, 신고하기 단추">
+          <div class="screen" aria-hidden="true">
+            <div class="app-bar">불법주정차 신고</div>
+            <div class="app-body">
+              <div class="field"><small>위반 장소</small><b>소화전 주변 5m 이내</b></div>
+              <div class="shots">
+                <div class="shot" id="shot1"><span class="t">첫 번째</span><span class="ts">14:02:10</span></div>
+                <div class="shot second" id="shot2"><span class="t">두 번째</span><span class="ts">14:03:24</span></div>
+              </div>
+              <div class="timer"><div class="ring"></div><div><b>1분 이상 지나고 한 장 더</b><small>같은 위치, 같은 각도</small></div></div>
+              <div class="field"><small>위치</small><b>현재 위치 자동 입력</b></div>
+              <div class="submit">신고하기</div>
             </div>
-            <p id="address-text"></p>
-            <div id="result-map"></div>
-            <button id="next-round-btn" class="action-btn" onclick="nextRound()">다음 라운드 이동</button>
+          </div>
         </div>
+      </div>
     </div>
+  </section>
 
-    <div id="final-overlay">
-        <div class="final-card">
-            <h1>도전 종료!</h1>
-            <p>당신의 10라운드 총합 점수는...</p>
-            <div class="final-score" id="final-score">0점</div>
-            <p class="rank-text" id="rank-title">남양주 길찾기 마스터</p>
-            <button class="action-btn" onclick="location.reload()" style="margin-top: 40px;">새 게임 시작하기</button>
+  <section class="sec check" id="확인할점" aria-labelledby="h-check">
+    <div class="sec-in check-in">
+      <div>
+        <h2 id="h-check">찍기 전에<br />이것만 확인하세요</h2>
+        <ul class="check-list">
+          <li><b>번호판</b>이 흐리거나 가려지지 않게</li>
+          <li><b>위반 장소</b>(소화전, 정류소 표지판, 횡단보도)가 함께 나오게</li>
+          <li><b>안전</b>이 먼저 — 차도에 들어가서 찍지 않기</li>
+        </ul>
+      </div>
+      <div>
+        <details>
+          <summary>사진은 꼭 앱 안에서 찍어야 하나요?</summary>
+          <p>네. 앱 카메라로 찍어야 촬영 시각과 위치가 함께 남아 증거로 인정됩니다. 갤러리에 저장해 둔 사진은 인정되지 않을 수 있습니다.</p>
+        </details>
+        <details>
+          <summary>잠깐 정차한 것도 신고되나요?</summary>
+          <p>같은 자리에서 1분 이상 간격으로 찍은 사진 두 장이 있어야 합니다. 잠깐 멈췄다 바로 떠난 차는 해당되지 않습니다.</p>
+        </details>
+        <details>
+          <summary>신고하면 바로 과태료가 나오나요?</summary>
+          <p>담당 부서가 사진과 위치를 검토해 요건을 갖춘 경우에 과태료가 부과됩니다. 처리 결과는 앱에서 확인할 수 있습니다.</p>
+        </details>
+        <details>
+          <summary>신고가 받아들여지지 않는 경우는요?</summary>
+          <p>번호판이나 위반 장소가 사진에 분명하지 않을 때, 두 사진의 간격이 1분이 안 될 때, 신고 대상 시간이 아닐 때(예: 어린이보호구역의 주말·야간) 등입니다. 자세한 사유는 앱의 처리 결과에서 볼 수 있습니다.</p>
+        </details>
+        <details>
+          <summary>제가 신고한 것이 운전자에게 알려지나요?</summary>
+          <p>신고인의 개인정보는 관련 법령에 따라 보호되며 위반 차량 운전자에게 알려지지 않습니다.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec quiz" id="퀴즈" aria-labelledby="h-quiz">
+    <div class="sec-in">
+      <div class="sec-title">
+        <h2 id="h-quiz">이 차,<br />신고 대상일까요?</h2>
+        <p>사진을 보고 골라 보세요. 세 문제입니다.</p>
+      </div>
+      <div class="quiz-card" id="quizCard">
+        <div class="q-media"><img id="qImg" src="img/q1.jpg" alt="" width="800" height="600" /><span class="q-badge" id="qBadge"></span></div>
+        <div class="q-body">
+          <p class="q-no" id="qNo">1 / 3</p>
+          <h3 id="qText"></h3>
+          <div class="q-btns" role="group" aria-label="답 고르기">
+            <button type="button" data-a="1" aria-pressed="false">신고 대상이에요</button>
+            <button type="button" data-a="0" aria-pressed="false">아니에요</button>
+          </div>
+          <div class="q-result" id="qResult" role="status" hidden>
+            <b id="qResTitle"></b>
+            <p id="qResText"></p>
+            <button class="btn" type="button" id="qNext">다음 문제</button>
+          </div>
         </div>
+      </div>
     </div>
+  </section>
 
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=cd11ba5a6c4101803585670117288466&libraries=services&autoload=false" onerror="showKakaoError()"></script>
+  <section class="final" aria-labelledby="h-final">
+    <div class="final-in">
+      <div>
+        <h2 id="h-final">보이면 찍고,<br />찍으면 바뀝니다</h2>
+        <p>시민 한 사람의 신고가 소방차의 길, 아이의 길, 버스의 길을 엽니다.</p>
+      </div>
+      <a class="btn" href="https://www.safetyreport.go.kr" target="_blank" rel="noopener">안전신문고 바로가기<span class="sr-only">(새 창)</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg></a>
+    </div>
+  </section>
+</main>
 
-    <script>
-        // 네트워크 차단 시 화면에 띄울 강력한 경고문
-        function showKakaoError() {
-            document.getElementById("spinner").style.display = "none";
-            document.getElementById("loading-title").innerHTML = "🚨 카카오맵 로딩 차단됨";
-            document.getElementById("loading-title").style.color = "#ff5555";
-            document.getElementById("loading-desc").innerHTML = `
-                현재 브라우저의 <b>'추적 방지'</b> 또는 <b>'광고 차단(AdBlock)'</b> 기능이 지도를 막고 있습니다.<br><br>
-                1. 주소창 왼쪽 자물쇠/방패 아이콘을 눌러 추적 방지를 꺼주세요.<br>
-                2. 또는 스마트폰으로 접속하시면 정상 작동합니다.
-            `;
-            document.getElementById("loading-desc").style.color = "#fff";
-            document.getElementById("loading-desc").style.lineHeight = "1.8";
-        }
+<footer>
+  <div class="in">
+    <div class="row">
+      <span><b>○○시청 ○○과</b> · 문의 000-000-0000</span>
+      <span>신고 기준과 과태료는 관련 법령과 지자체 운영 기준에 따릅니다.</span>
+    </div>
+    <div class="verify">내용 기준일 <b>2026년 11월</b> · 내용 확인 <b>○○시 ○○과</b> — 법령이나 운영 기준이 바뀌면 이 날짜와 함께 고쳐 주세요.</div>
+  </div>
+</footer>
 
-        const RAW_COORDS_DATA = `
-37.6009416	127.178075
-37.6363143	127.216264
-37.6247068	127.148767
-37.6431045	127.237618
-37.7182440	127.184180
-37.6510288	127.115054
-37.6278363	127.201919
-37.6561381	127.303654
-37.6572000	127.302938
-37.6602520	127.175667
-37.6243236	127.150363
-37.6007500	127.174613
-37.7107138	127.117080
-37.5937646	127.172728
-37.7183873	127.200996
-37.5352995	127.262940
-37.6083498	127.169974
-37.7108215	127.120966
-37.6515103	127.239868
-37.6463655	127.125396
-37.6208810	127.147914
-37.6570061	127.303135
-37.5857700	127.169210
-37.7125651	127.187209
-37.6544378	127.129112
-37.6243490	127.150425
-37.6274933	127.202805
-37.6454905	127.230648
-37.6460958	127.125966
-37.7110065	127.120556
-37.6017495	127.174615
-37.6073645	127.157253
-37.6563336	127.183802
-37.6241933	127.149881
-37.6542221	127.243012
-37.7115948	127.187497
-37.6494533	127.140703
-37.6245490	127.149969
-37.6572473	127.302496
-37.6431156	127.237588
-37.6593155	127.286319
-37.6276598	127.202404
-37.6580540	127.124296
-37.6593030	127.175126
-37.6572388	127.302459
-37.7199190	127.181541
-37.6930646	127.211051
-37.6088620	127.167927
-37.6741945	127.114376
-37.7184758	127.205043
-        `;
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-        let TARGET_COORDS = [];
-        let map, rv, rvClient, geocoder, resultMap;
-        let actualLocation = null;
-        let actualAddress = "";
-        let guessMarker = null;
-        let searchAttempts = 0;
-
-        let currentRound = 1;
-        const MAX_ROUNDS = 10;
-        let totalScore = 0;
-
-        window.onload = function() {
-            // 카카오맵 객체가 아예 생성조차 안 되었다면 즉시 에러 표시 후 중단
-            if (typeof kakao === 'undefined') {
-                showKakaoError();
-                return;
-            }
-
-            // 카카오맵 코어가 100% 준비되었을 때만 게임 초기화 실행
-            kakao.maps.load(function() {
-                initGame();
-            });
-        };
-
-        function initGame() {
-            const lines = RAW_COORDS_DATA.trim().split('\n');
-            for (let i = 0; i < lines.length; i++) {
-                const parts = lines[i].trim().split(/\s+/);
-                if (parts.length >= 2) {
-                    TARGET_COORDS.push({ lat: parseFloat(parts[0]), lng: parseFloat(parts[1]) });
-                }
-            }
-
-            rv = new kakao.maps.Roadview(document.getElementById('pano'));
-            rvClient = new kakao.maps.RoadviewClient();
-            geocoder = new kakao.maps.services.Geocoder();
-
-            const mapContainer = document.getElementById('map');
-            map = new kakao.maps.Map(mapContainer, {
-                center: new kakao.maps.LatLng(37.606, 127.161),
-                level: 8
-            });
-
-            kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
-                const latlng = mouseEvent.latLng;
-                const lat = latlng.getLat();
-                const lng = latlng.getLng();
-
-                if (lat < 37.514 || lat > 37.760 || lng < 127.110 || lng > 127.380) {
-                    alert("남양주시 내부를 클릭해주세요!");
-                    return;
-                }
-
-                if (guessMarker) {
-                    guessMarker.setPosition(latlng);
-                } else {
-                    guessMarker = new kakao.maps.Marker({ position: latlng });
-                    guessMarker.setMap(map);
-                    document.getElementById("guess-btn").disabled = false;
-                }
-            });
-
-            document.getElementById("guess-btn").addEventListener("click", calculateScore);
-            document.getElementById("skip-btn").addEventListener("click", () => {
-                document.getElementById("map-ui").style.display = "none";
-                document.getElementById("loading-overlay").style.display = "flex";
-                if(guessMarker) { guessMarker.setMap(null); guessMarker = null; }
-                document.getElementById("guess-btn").disabled = true;
-                searchAttempts = 0;
-                findValidStreetView();
-            });
-
-            startRound();
-        }
-
-        function startRound() {
-            document.getElementById("round-text").innerText = `${currentRound} / ${MAX_ROUNDS}`;
-            document.getElementById("total-score-text").innerText = `${totalScore}점`;
-            document.getElementById("status-bar").style.display = "flex";
-            
-            searchAttempts = 0;
-            if(guessMarker) { guessMarker.setMap(null); guessMarker = null; }
-            document.getElementById("guess-btn").disabled = true;
-            
-            document.getElementById("loading-overlay").style.display = "flex";
-            document.getElementById("map-ui").style.display = "none";
-            
-            findValidStreetView();
-        }
-
-        function findValidStreetView() {
-            searchAttempts++;
-            if (searchAttempts > 20) searchAttempts = 0;
-
-            const randomData = TARGET_COORDS[Math.floor(Math.random() * TARGET_COORDS.length)];
-            const position = new kakao.maps.LatLng(randomData.lat, randomData.lng);
-            
-            rvClient.getNearestPanoId(position, 50, function(panoId) {
-                if (panoId === null) {
-                    setTimeout(findValidStreetView, 50);
-                    return;
-                }
-
-                geocoder.coord2Address(position.getLng(), position.getLat(), function(result, status) {
-                    if (status === kakao.maps.services.Status.OK) {
-                        actualAddress = result[0].address.address_name;
-                        actualLocation = position;
-                        
-                        rv.setPanoId(panoId, position);
-                        
-                        document.getElementById("loading-overlay").style.display = "none";
-                        document.getElementById("map-ui").style.display = "block";
-                        
-                        map.relayout();
-                        map.setCenter(new kakao.maps.LatLng(37.636, 127.216));
-                    } else {
-                        setTimeout(findValidStreetView, 50);
-                    }
-                });
-            });
-        }
-
-        function computeDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; 
-            const p1 = lat1 * Math.PI / 180;
-            const p2 = lat2 * Math.PI / 180;
-            const dp = (lat2 - lat1) * Math.PI / 180;
-            const dl = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dp / 2) * Math.sin(dp / 2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) * Math.sin(dl / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
-        }
-
-        function calculateScore() {
-            if (!guessMarker || !actualLocation) return;
-            const guessLoc = guessMarker.getPosition();
-            
-            const distanceInMeters = computeDistance(actualLocation.getLat(), actualLocation.getLng(), guessLoc.getLat(), guessLoc.getLng());
-            const distanceInKm = (distanceInMeters / 1000).toFixed(2);
-
-            let roundScore = 5000 * Math.exp(-distanceInKm / 3.0); 
-            roundScore = Math.max(0, Math.round(roundScore)); 
-            totalScore += roundScore;
-
-            const distanceText = distanceInMeters < 1000 ? Math.round(distanceInMeters) + "m" : distanceInKm + "km";
-            document.getElementById("distance-text").innerText = `실제 위치와의 오차: ${distanceText}`;
-            document.getElementById("score-text").innerText = `${roundScore}점 / 5000점`;
-            document.getElementById("address-text").innerText = `정답 주소: ${actualAddress}`;
-            
-            document.getElementById("total-score-text").innerText = `${totalScore}점`;
-            
-            const nextBtn = document.getElementById("next-round-btn");
-            if (currentRound < MAX_ROUNDS) {
-                nextBtn.innerText = "다음 라운드 이동";
-                nextBtn.onclick = () => { document.getElementById("result-overlay").style.display = "none"; nextRound(); };
-            } else {
-                nextBtn.innerText = "최종 결과 보기";
-                nextBtn.onclick = () => { document.getElementById("result-overlay").style.display = "none"; showFinalScore(); };
-            }
-
-            document.getElementById("result-overlay").style.display = "flex";
-            document.getElementById("map-ui").style.display = "none";
-
-            setTimeout(() => {
-                showResultMap(guessLoc, actualLocation);
-            }, 100);
-        }
-
-        function nextRound() {
-            currentRound++;
-            startRound();
-        }
-
-        function showFinalScore() {
-            document.getElementById("final-score").innerText = `${totalScore}점`;
-            
-            let rank = "";
-            if (totalScore >= 45000) rank = "🏆 인간 내비게이션! 남양주 토박이시군요.";
-            else if (totalScore >= 35000) rank = "🚗 길눈이 매우 밝은 드라이버입니다.";
-            else if (totalScore >= 20000) rank = "🤔 아는 길만 아는 평범한 시민입니다.";
-            else rank = "😅 남양주에서 길 잃어버리기 딱 좋습니다.";
-            
-            document.getElementById("rank-title").innerText = rank;
-            document.getElementById("final-overlay").style.display = "flex";
-            document.getElementById("status-bar").style.display = "none";
-        }
-        
-        function showResultMap(guess, actual) {
-            const mapDiv = document.getElementById("result-map");
-            mapDiv.innerHTML = ''; 
-
-            resultMap = new kakao.maps.Map(mapDiv, {
-                center: actual,
-                level: 5
-            });
-
-            const guessM = new kakao.maps.Marker({ position: guess });
-            const actualM = new kakao.maps.Marker({ position: actual });
-            guessM.setMap(resultMap);
-            actualM.setMap(resultMap);
-
-            const polyline = new kakao.maps.Polyline({
-                path: [guess, actual],
-                strokeWeight: 4,
-                strokeColor: '#FF0000',
-                strokeOpacity: 0.8,
-                strokeStyle: 'solid'
-            });
-            polyline.setMap(resultMap);
-
-            const bounds = new kakao.maps.LatLngBounds();
-            bounds.extend(guess);
-            bounds.extend(actual);
-            resultMap.setBounds(bounds);
-        }
-    </script>
+<script src="three.min.js"></script>
+<script src="street.js"></script>
+<script src="page.js"></script>
 </body>
 </html>
