@@ -46,6 +46,7 @@
   }
   function useStills() {
     streetReady();
+    window.dispatchEvent(new Event('intro-done'));
     stillOn = true;
     document.body.classList.add('no3d');
     showStill();
@@ -151,6 +152,16 @@
   }
   const std = (color, o) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.88, metalness: 0.02 }, o || {}));
   const scene = new THREE.Scene();
+  // 인트로: 장면에 넣는 것마다 '단계'를 적어 둔다 → 도로 → 건물 → 시설물 → 차 → 사람 순으로 세운다
+  const INTRO = document.documentElement.classList.contains('intro-on') && !BARE && SHOT == null && !reduce;
+  let PHASE = 'none';
+  {
+    const add0 = scene.add.bind(scene);
+    scene.add = (...objs) => {
+      for (const o of objs) if (o && !o.userData.phase) o.userData.phase = PHASE;
+      return add0(...objs);
+    };
+  }
   function mesh(geo, mat, x, y, z, parent, noShadow) {
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x || 0, y || 0, z || 0);
@@ -217,6 +228,7 @@
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
+  PHASE = 'road';
 
   // 아스팔트 — 잔무늬, 덧씌운 자국, 갈라짐
   const asphaltTex = (rx, ry) =>
@@ -388,6 +400,7 @@
     }
   }
 
+  PHASE = 'bldg';
   // ── 길 건너편 건물 ──
   const SHOPS = ['행복약국', '우리분식', '한빛안경', '미소치과', '새벽베이커리', '동네세탁', '으뜸정육점', '햇살내과', '다온카페', '청춘미용실', '바른부동산', '24시 마트', '소담한식', '열린서점'];
   const SIGN_COL = ['#1f5fa8', '#c23a2b', '#2f7d4f', '#f0a71e', '#333333', '#7a3fa0', '#0f7d86'];
@@ -720,6 +733,7 @@
   schoolSign(39.5, 9.6);
   schoolSign(58.6, 9.6);
 
+  PHASE = 'prop';
   // ── 소화전 (x -30) — 빨간 연석·노면 + "소방시설 주정차금지" ──
   {
     const red = std(0xc92a24, { roughness: 0.45 });
@@ -876,6 +890,7 @@
     }
   }
 
+  PHASE = 'road';
   // ── 황색 연석선: 실선 = 주정차 금지, 점선 = 주차 금지(5분 이내 정차 허용) ──
   function edge(x0, x1, z, dashed) {
     if (!dashed) {
@@ -896,6 +911,7 @@
   edge(6.6, 20, -5.72);
   edge(20, 95, -5.72, true);
 
+  PHASE = 'prop';
   // ── 표지판 ──
   const poleMat = std(0xa9adb2, { metalness: 0.55, roughness: 0.35 });
   const signBack = std(0x989ca1, { metalness: 0.5, roughness: 0.45 });
@@ -1088,6 +1104,7 @@
   // 인도 장면 주정차금지
   signPost(76.4, 9.55, -0.7, 2.7, [{ r: 0.32, tex: noParkTex, y: 2.42 }, { w: 0.64, h: 0.22, tex: subPlate('보도 전 구간'), y: 1.93 }]);
 
+  PHASE = 'car';
   // ── 차: 옆모습 윤곽을 입체로 + 휠하우스·창·기둥·거울·문틈·번호판·바닥 그림자 ──
   const trimMat = std(0x16171a, { roughness: 0.55 });
   const chromeMat = std(0xdfe2e6, { metalness: 0.9, roughness: 0.16 });
@@ -1544,6 +1561,7 @@
     return v;
   });
 
+  PHASE = 'ppl';
   // ── 사람 (팔다리가 움직이는 인형) ──
   function personRig(o) {
     const g = new THREE.Group();
@@ -1655,6 +1673,7 @@
     return Object.assign(r, { x: p.x, dir: p.dir, v: p.v });
   });
 
+  PHASE = 'none';
   // ── 금지 범위 표시: 연석을 따라 재는 노란 화살표 · 말풍선 ──
   function measure(x0, z0, x1, z1, label) {
     const len = Math.hypot(x1 - x0, z1 - z0);
@@ -2046,13 +2065,101 @@
     resize();
   }
   applyTier();
+
+  // ── 인트로: 거리가 하나씩 지어지는 연출 (약 4.4초) ──
+  const IP = {
+    road: { t: 0.0, sw: 0.9, d: 0.55, name: '도로를 깔고' },
+    bldg: { t: 0.75, sw: 1.15, d: 0.8, name: '건물을 세우고' },
+    prop: { t: 1.75, sw: 1.1, d: 0.55, name: '표지판을 달고' },
+    car: { t: 2.6, sw: 0.9, d: 0.6, name: '차가 들어오고' },
+    ppl: { t: 3.25, sw: 0.6, d: 0.4, name: '사람들이 오갑니다' },
+  };
+  const I_END = 4.1;
+  const I_CAM = { cam: [34, 64, 92], look: [8, 0, -4] };
+  let introOn = INTRO;
+  const IT_FIX = params.has('introT') ? Number(params.get('introT')) : null; // 점검용: 그 순간에서 멈춤
+  let introT = 0;
+  const introItems = [];
+  if (introOn) {
+    const bb = new THREE.Box3();
+    for (const o of scene.children) {
+      const ph = o.userData.phase;
+      if (!IP[ph] || o.isLight || o.isSprite) continue;
+      bb.setFromObject(o);
+      if (bb.isEmpty()) continue;
+      const nx = Math.max(0, Math.min(1, Math.abs((bb.min.x + bb.max.x) / 2 - 5) / 95)); // 교차로 가운데 → 바깥으로 퍼짐
+      introItems.push({ o, p: IP[ph], ph, nx, y0: o.position.y, s0: o.scale.clone(), h: Math.max(0.4, bb.max.y) + 0.3, vis: o.visible });
+    }
+    window.addEventListener('intro-skip', () => (introT = I_END), { once: true });
+  }
+  const eOut = (x) => 1 - Math.pow(1 - x, 3);
+  const eBack = (x) => 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2);
+  const eBounce = (x) => {
+    const n = 7.5625;
+    const d = 2.75;
+    if (x < 1 / d) return n * x * x;
+    if (x < 2 / d) return n * (x -= 1.5 / d) * x + 0.75;
+    if (x < 2.5 / d) return n * (x -= 2.25 / d) * x + 0.9375;
+    return n * (x -= 2.625 / d) * x + 0.984375;
+  };
+  const eInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+  const camA = new THREE.Vector3();
+  const camB = new THREE.Vector3();
+  function introStep(dt) {
+    introT = IT_FIX != null ? IT_FIX : Math.min(I_END, introT + dt);
+    const done = introT >= I_END;
+    for (const it of introItems) {
+      const { o, p } = it;
+      const e = done ? 1 : Math.max(0, Math.min(1, (introT - p.t - it.nx * p.sw) / p.d));
+      o.visible = it.vis && e > 0;
+      if (it.ph === 'road') {
+        const k = Math.max(0.0001, eOut(e));
+        o.scale.set(it.s0.x * k, it.s0.y * k, it.s0.z * k);
+      } else if (it.ph === 'bldg' || it.ph === 'prop') {
+        o.position.y = it.y0 - it.h * (1 - (e >= 1 ? 1 : eBack(e))); // 땅속에서 솟아오름
+      } else if (it.ph === 'car') {
+        o.position.y = it.y0 + 7 * (1 - eBounce(e)); // 위에서 떨어져 통통
+      } else {
+        const k = Math.max(0.0001, e >= 1 ? 1 : eBack(e));
+        o.scale.set(it.s0.x * k, it.s0.y * k, it.s0.z * k);
+      }
+    }
+    // 카메라: 높은 곳에서 천천히 내려와 첫 화면 구도로
+    const c = eInOut(Math.min(1, introT / I_END));
+    const st0 = S[0];
+    camA.set(...I_CAM.cam).lerp(camB.set(...st0.cam), c);
+    camera.position.copy(camA);
+    camA.set(...I_CAM.look).lerp(camB.set(...st0.look), c);
+    camera.lookAt(camA);
+    camPos.copy(camera.position);
+    camLook.copy(camA);
+    // 인트로 동안은 안개를 걷어 멀리서도 또렷하게
+    scene.fog.near = 170 - 95 * c;
+    scene.fog.far = 420 - 220 * c;
+    let cur = 'road';
+    for (const k in IP) if (introT >= IP[k].t) cur = k;
+    window.dispatchEvent(new CustomEvent('intro-progress', { detail: { name: IP[cur].name, p: introT / I_END } }));
+    if (done) {
+      introOn = false;
+      scene.fog.near = 75;
+      scene.fog.far = 200;
+      for (const it of introItems) {
+        it.o.visible = it.vis;
+        if (it.ph === 'road' || it.ph === 'ppl') it.o.scale.copy(it.s0);
+        if (it.ph === 'bldg' || it.ph === 'prop' || it.ph === 'car') it.o.position.y = it.y0;
+      }
+      window.dispatchEvent(new Event('intro-done'));
+    }
+  }
+  if (introOn) introStep(0); // 첫 화면부터 빈 땅에서 시작
+
   // 처음 몇 초 동안 실제로 버벅이면 한 단계씩 낮춘다
   let perfT = 0;
   let perfSum = 0;
   let perfN = 0;
   let stopped = false;
   function watchPerf(raw) {
-    if (instant || BARE || params.get('q')) return;
+    if (instant || BARE || params.get('q') || introOn) return;
     perfT += raw;
     if (perfT > 1.5 && perfT < 5) {
       perfSum += raw;
@@ -2172,6 +2279,7 @@
         p.walk(t * 6 * p.v + p.x, 0.45);
       }
     }
+    if (introOn) introStep(camDt);
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
     streetReady(); // 첫 화면을 그렸음 → 인트로가 이때부터 재생

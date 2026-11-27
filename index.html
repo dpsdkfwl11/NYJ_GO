@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <script>
-  /* 첫 화면 인트로를 틀지 먼저 정한다(본문이 잠깐 보였다 덮이는 깜빡임 방지).
+  /* 첫 화면 인트로(거리가 지어지는 연출)를 틀지 먼저 정한다(본문이 잠깐 보였다 숨는 깜빡임 방지).
      생략: 움직임 줄이기 설정 · 가벼운 화면 · 점검용 캡처. 열 때(새로고침 포함)마다 재생. ?intro=1 은 위 설정과 관계없이 강제 재생 */
   (function () {
     try {
@@ -307,105 +307,37 @@
   }
   .toast.on { opacity: 1; transform: translate(-50%, 0); }
 
-  /* ── 첫 화면 인트로: 안전신문고 카메라 뷰파인더 ── */
-  #vfIntro { display: none; position: fixed; inset: 0; z-index: 9999; color: #f8fafc; font-family: var(--font); overflow: hidden; touch-action: none; }
-  html.intro-on #vfIntro { display: block; }
+  /* ── 첫 화면 인트로: 거리가 지어지는 동안 ── */
+  #buildIntro {
+    display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 9999;
+    padding: 0 calc(24px + var(--safe-r)) calc(22px + var(--safe-b)) calc(24px + var(--safe-l));
+    pointer-events: none; color: #fff;
+  }
+  html.intro-on #buildIntro { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
   html.intro-on body { overflow: hidden; }
-  #vfIntro.out { opacity: 0; transition: opacity 0.2s ease; }
-  .vf-scrim {
-    position: absolute; inset: 0; background: rgba(11, 17, 32, 0.88);
-    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-    will-change: opacity; transition: opacity 1.1s cubic-bezier(0.4, 0, 0.2, 1);
+  #buildIntro.out { display: flex; opacity: 0; transition: opacity 0.5s ease; }
+  .bi-info { flex: 1; min-width: 0; max-width: 380px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
+  .bi-kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; opacity: 0.9; }
+  .bi-step { display: block; font-size: 21px; font-weight: 800; letter-spacing: -0.03em; margin: 2px 0 9px; }
+  .bi-bar { height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.32); overflow: hidden; }
+  .bi-bar i { display: block; height: 100%; background: #fff; transform: scaleX(0); transform-origin: left center; will-change: transform; }
+  .bi-skip {
+    pointer-events: auto; flex: none; min-height: 44px; padding: 0 16px; border-radius: 3px; border: 0;
+    background: rgba(25, 23, 20, 0.6); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
   }
-  .vf-flash { position: absolute; inset: 0; background: #fff; opacity: 0; will-change: opacity; pointer-events: none; }
-  #vfIntro.f1 .vf-flash { animation: vfFlash1 0.26s ease-out; }
-  #vfIntro.f2 .vf-flash { animation: vfFlash2 0.34s ease-out; }
-  @keyframes vfFlash1 { 0% { opacity: 0; } 25% { opacity: 0.75; } 100% { opacity: 0; } }
-  @keyframes vfFlash2 { 0% { opacity: 0; } 25% { opacity: 0.85; } 100% { opacity: 0; } }
-  .vf-hud {
-    position: absolute; inset: 0; will-change: transform, opacity;
-    transform: scale(1.08); opacity: 0;
-    transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.25, 1), opacity 0.4s ease;
-  }
-  #vfIntro.boot .vf-hud { transform: scale(1); opacity: 1; }
-  #vfIntro.kick .vf-hud { animation: vfKick 0.32s ease-out; }
-  @keyframes vfKick { 0% { transform: scale(0.982); } 100% { transform: scale(1); } }
-  #vfIntro.develop .vf-scrim { opacity: 0; }
-  #vfIntro.develop .vf-hud { transform: scale(1.06); opacity: 0; transition: transform 1.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.9s ease 0.1s; }
-  .vf-grid i { position: absolute; background: rgba(248, 250, 252, 0.12); }
-  .vf-grid i:nth-child(1), .vf-grid i:nth-child(2) { top: 0; bottom: 0; width: 1px; }
-  .vf-grid i:nth-child(1) { left: 33.333%; }
-  .vf-grid i:nth-child(2) { left: 66.666%; }
-  .vf-grid i:nth-child(3), .vf-grid i:nth-child(4) { left: 0; right: 0; height: 1px; }
-  .vf-grid i:nth-child(3) { top: 33.333%; }
-  .vf-grid i:nth-child(4) { top: 66.666%; }
-  .vf-corner { position: absolute; width: 46px; height: 46px; color: #f8fafc; opacity: 0.85; }
-  .vf-corner svg { width: 100%; height: 100%; display: block; }
-  .vf-corner.tl { top: calc(18px + var(--safe-t)); left: calc(18px + var(--safe-l)); }
-  .vf-corner.tr { top: calc(18px + var(--safe-t)); right: calc(18px + var(--safe-r)); transform: scaleX(-1); }
-  .vf-corner.bl { bottom: calc(18px + var(--safe-b)); left: calc(18px + var(--safe-l)); transform: scaleY(-1); }
-  .vf-corner.br { bottom: calc(18px + var(--safe-b)); right: calc(18px + var(--safe-r)); transform: scale(-1, -1); }
-  .vf-top {
-    position: absolute; top: calc(30px + var(--safe-t)); left: calc(80px + var(--safe-l)); right: calc(80px + var(--safe-r));
-    display: flex; justify-content: space-between; align-items: center; gap: 12px;
-    font-size: 13px; font-weight: 700; letter-spacing: 0.02em;
-  }
-  .vf-top span { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
-  .vf-top svg { width: 16px; height: 16px; flex: none; }
-  .vf-rec { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
-  .vf-prog { position: absolute; top: calc(62px + var(--safe-t)); left: calc(80px + var(--safe-l)); right: calc(80px + var(--safe-r)); }
-  .vf-prog .bar { height: 3px; border-radius: 2px; background: rgba(248, 250, 252, 0.18); overflow: hidden; }
-  .vf-prog .bar i { display: block; height: 100%; background: #22c55e; transform: scaleX(0); transform-origin: left center; will-change: transform; transition: transform 0.72s cubic-bezier(0.15, 0.7, 0.25, 1); }
-  #vfIntro.count .vf-prog .bar i { transform: scaleX(1); }
-  .vf-prog small { display: block; margin-top: 6px; font-size: 12px; font-weight: 600; color: rgba(248, 250, 252, 0.72); text-align: right; }
-  .vf-af { position: absolute; left: 50%; top: 44%; width: 136px; height: 104px; margin: -52px 0 0 -68px; color: #facc15; will-change: transform; }
-  .vf-af svg { width: 100%; height: 100%; display: block; overflow: visible; }
-  #vfIntro.focus .vf-af { animation: vfFocus 0.45s ease-out; }
-  #vfIntro.wait .vf-af { animation: vfSearch 1.1s ease-in-out infinite; }
-  @keyframes vfSearch { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.07); opacity: 0.6; } }
-  #vfIntro.wait .vf-rec { animation: vfBlink 1s steps(2) infinite; }
-  @keyframes vfBlink { 50% { opacity: 0.2; } }
-  #vfIntro.lock .vf-af { color: #22c55e; }
-  @keyframes vfFocus { 0% { transform: scale(1.12); } 55% { transform: scale(0.94); } 100% { transform: scale(1); } }
-  .vf-bottom { position: absolute; left: 0; right: 0; bottom: calc(100px + var(--safe-b)); display: flex; flex-direction: column; align-items: center; gap: 14px; }
-  .vf-time { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; font-size: clamp(42px, 6.5vw, 68px); font-weight: 700; letter-spacing: 0.04em; line-height: 1; }
-  .vf-tags { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-  .vf-tags span { font-size: 13px; font-weight: 700; padding: 5px 11px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(248, 250, 252, 0.45); }
-  .vf-ok { opacity: 0.4; transition: opacity 0.3s, background 0.3s; }
-  .vf-gauge { display: flex; align-items: center; gap: 10px; width: min(460px, 82vw); font-size: 13px; font-weight: 700; }
-  .vf-gauge span { flex: none; color: rgba(248, 250, 252, 0.8); }
-  .vf-gauge .bar { flex: 1; height: 8px; border-radius: 4px; background: rgba(248, 250, 252, 0.16); overflow: hidden; }
-  .vf-gauge .bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #16a34a, #4ade80); transform: scaleX(0); transform-origin: left center; will-change: transform; }
-  .vf-gauge b { flex: none; min-width: 3.6em; text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; color: #4ade80; }
-  #vfIntro.reached .vf-gauge .bar { box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.6); }
-  .vf-ok.on { opacity: 1; background: #22c55e; color: #0b1120; box-shadow: none; }
-  .vf-chips { position: absolute; left: calc(80px + var(--safe-l)); bottom: calc(30px + var(--safe-b)); display: grid; gap: 6px; }
-  .vf-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; padding: 6px 10px; border-radius: 4px; background: rgba(248, 250, 252, 0.08); opacity: 0.38; transition: opacity 0.3s, background 0.3s; }
-  .vf-chip svg { width: 14px; height: 14px; flex: none; }
-  .vf-chip.on { opacity: 1; background: rgba(34, 197, 94, 0.2); box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.75); }
-  .vf-chip b { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; font-weight: 700; }
-  .vf-skip {
-    position: absolute; right: calc(80px + var(--safe-r)); bottom: calc(30px + var(--safe-b));
-    min-height: 44px; transition: opacity 0.35s; padding: 0 16px; border-radius: 4px; border: 1px solid rgba(248, 250, 252, 0.55);
-    background: rgba(11, 17, 32, 0.55); color: #f8fafc; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
-  }
-  .vf-skip:hover { background: rgba(11, 17, 32, 0.8); }
-  #vfIntro.develop .vf-skip { opacity: 0; pointer-events: none; }
+  /* 인트로 동안은 글·메뉴를 숨겼다가, 끝나면 한 줄씩 올라오게 */
+  html.intro-on .top, html.intro-on .rail { opacity: 0; pointer-events: none; }
+  html.intro-on .shade { opacity: 0 !important; }
+  html.intro-on .hero-in > * { opacity: 0; transform: translateY(28px); }
+  .hero-in > * { transition: opacity 0.7s ease, transform 0.85s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .intro-reveal .hero-in > :nth-child(2) { transition-delay: 0.12s; }
+  .intro-reveal .hero-in > :nth-child(3) { transition-delay: 0.26s; }
+  .intro-reveal .hero-in > :nth-child(4) { transition-delay: 0.38s; }
+  .intro-reveal .hero-in > :nth-child(5) { transition-delay: 0.5s; }
+  .intro-reveal .top, .intro-reveal .rail { transition: opacity 0.6s ease 0.55s; }
   @media (max-width: 860px) {
-    .vf-corner { width: 30px; height: 30px; }
-    .vf-corner.tl, .vf-corner.tr { top: calc(12px + var(--safe-t)); }
-    .vf-corner.bl, .vf-corner.br { bottom: calc(12px + var(--safe-b)); }
-    .vf-corner.tl, .vf-corner.bl { left: calc(12px + var(--safe-l)); }
-    .vf-corner.tr, .vf-corner.br { right: calc(12px + var(--safe-r)); }
-    .vf-top { left: calc(60px + var(--safe-l)); right: calc(60px + var(--safe-r)); }
-    .vf-top { font-size: 12px; top: calc(26px + var(--safe-t)); }
-    .vf-top .mid { display: none; }
-    #vfIntro.wait .vf-top .mid { display: inline-flex; position: absolute; left: 50%; top: calc(100% + 10px); transform: translateX(-50%); }
-    .vf-bottom { bottom: calc(118px + var(--safe-b)); gap: 12px; }
-    .vf-gauge { font-size: 12px; }
-    .vf-chips { left: calc(50px + var(--safe-l)); bottom: calc(24px + var(--safe-b)); }
-    .vf-chip { font-size: 12px; padding: 5px 8px; }
-    .vf-skip { right: calc(50px + var(--safe-r)); bottom: calc(24px + var(--safe-b)); padding: 0 12px; }
+    .bi-step { font-size: 18px; }
   }
 
   /* 캡처용 */
@@ -471,35 +403,9 @@
 </style>
 </head>
 <body class="at-hero">
-<div id="vfIntro" role="dialog" aria-modal="true" aria-label="안전신문고 카메라 인트로">
-  <div class="vf-scrim"></div>
-  <div class="vf-hud" aria-hidden="true">
-    <div class="vf-grid"><i></i><i></i><i></i><i></i></div>
-    <div class="vf-corner tl"><svg viewBox="0 0 46 46" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"><path d="M2 30V2h28" /></svg></div>
-    <div class="vf-corner tr"><svg viewBox="0 0 46 46" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"><path d="M2 30V2h28" /></svg></div>
-    <div class="vf-corner bl"><svg viewBox="0 0 46 46" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"><path d="M2 30V2h28" /></svg></div>
-    <div class="vf-corner br"><svg viewBox="0 0 46 46" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"><path d="M2 30V2h28" /></svg></div>
-    <div class="vf-top">
-      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>안전신문고 카메라</span>
-      <span class="mid"><i class="vf-rec"></i>카메라 준비 중</span>
-      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>GPS 자동 기록</span>
-    </div>
-    <div class="vf-af">
-      <svg viewBox="0 0 136 104" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M2 24V2h24M110 2h24v22M134 80v22h-24M26 102H2V80" /><path d="M68 44v16M60 52h16" stroke-width="1.6" /></svg>
-    </div>
-    <div class="vf-bottom">
-      <div class="vf-time">14:02:10</div>
-      <div class="vf-gauge"><span>1분 경과</span><div class="bar"><i></i></div><b>+0:00</b></div>
-      <div class="vf-tags"><span class="vf-shot">1 / 2</span><span class="vf-ok">1분 이상 경과 확인</span></div>
-    </div>
-    <div class="vf-chips">
-      <span class="vf-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>1차 촬영 완료 · <b>14:02:10</b></span>
-      <span class="vf-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>2차 촬영 완료 · <b>14:03:11</b></span>
-    </div>
-  </div>
-  <div class="vf-flash"></div>
-  <p class="sr-only vf-live" aria-live="polite">안전신문고 신고는 같은 자리에서 1분 간격으로 사진 두 장을 찍습니다.</p>
-  <button class="vf-skip" type="button">건너뛰기</button>
+<div id="buildIntro">
+  <div class="bi-info" aria-live="polite"><span class="bi-kicker">불법주정차 주민신고</span><b class="bi-step">거리를 불러오는 중</b><div class="bi-bar"><i></i></div></div>
+  <button class="bi-skip" type="button">건너뛰기</button>
 </div>
 <script src="intro.js"></script>
 

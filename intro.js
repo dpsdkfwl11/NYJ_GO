@@ -1,147 +1,53 @@
-/* 첫 화면 인트로 — 안전신문고 카메라 뷰파인더로 "1분 간격 2장 촬영"을 3초 안에 보여 준다.
- * <head> 의 짧은 스크립트가 재생할지 먼저 정해 html.intro-on 을 붙인다(본문이 잠깐 보였다 덮이는 깜빡임 방지).
- * 움직이는 것은 transform / opacity 만. 숫자는 requestAnimationFrame 으로 센다. */
+/* 첫 화면 인트로 — 3D 거리가 도로 → 건물 → 시설물 → 차 → 사람 순으로 지어지고, 끝나면 제목이 한 줄씩 올라온다.
+ * 세우는 연출은 street.js 가 하고(intro-progress / intro-done 알림), 여기서는 진행 문구·건너뛰기·마무리만 맡는다.
+ * <head> 의 짧은 스크립트가 재생할지 먼저 정해 html.intro-on 을 붙인다. */
 (function () {
   'use strict';
   const root = document.documentElement;
-  const el = document.getElementById('vfIntro');
+  const el = document.getElementById('buildIntro');
   if (!el) return;
   if (!root.classList.contains('intro-on')) {
     el.remove();
     return;
   }
-  const $ = (s) => el.querySelector(s);
-  const timeEl = $('.vf-time');
-  const shotEl = $('.vf-shot');
-  const okEl = $('.vf-ok');
-  const chips = el.querySelectorAll('.vf-chip');
-  const params = new URLSearchParams(location.search);
-  const AT = params.has('introAt') ? Number(params.get('introAt')) : null; // 점검용: 그 순간에서 멈춤
-
-  const pad = (n) => String(n).padStart(2, '0');
-  const BASE = 14 * 3600 + 2 * 60; // 14:02:00
-  const show = (sec) => {
-    const t = BASE + sec;
-    timeEl.textContent = `${pad(Math.floor(t / 3600))}:${pad(Math.floor((t % 3600) / 60))}:${pad(t % 60)}`;
-  };
-  const easeOut = (p) => 1 - Math.pow(1 - p, 3);
-  const add = (c) => el.classList.add(c);
-  const restart = (c) => {
-    el.classList.remove(c);
-    void el.offsetWidth; // 같은 애니메이션을 다시 걸기 위해
-    el.classList.add(c);
-  };
-
-  // ── 시간표 (초) ── 단계마다 눈에 들어올 만큼 머문다 (전체 약 4.5초)
-  const C0 = 1.3; // 1분 타임랩스 시작
-  const C1 = 2.9; // 끝 (1.6초 동안)
-  const gauge = el.querySelector('.vf-gauge i');
-  const gaugeTxt = el.querySelector('.vf-gauge b');
-  const easeInOut = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
-  let counting = false;
-  const steps = [
-    [0.0, () => add('boot')],
-    [0.45, () => add('focus')],
-    [0.85, () => add('lock')],
-    [1.05, () => { // 1차 셔터
-      restart('f1');
-      restart('kick');
-      chips[0].classList.add('on');
-      el.querySelector('.vf-live').textContent = '첫 번째 사진 촬영, 14시 2분 10초';
-    }],
-    [C0, () => {
-      counting = true;
-      add('count');
-    }],
-    [C1, () => {
-      counting = false;
-      setCount(1);
-      okEl.classList.add('on');
-      add('reached');
-    }],
-    [3.3, () => { // 2차 셔터 (1차와 2.25초 간격)
-      restart('f2');
-      restart('kick');
-      shotEl.textContent = '2 / 2';
-      chips[1].classList.add('on');
-      el.querySelector('.vf-live').textContent = '1분 뒤 두 번째 사진 촬영, 14시 3분 11초';
-    }],
-    [3.65, () => add('develop')],
-    [4.8, () => end(false)],
-  ];
-  function setCount(p) {
-    const e = easeInOut(p);
-    const sec = Math.round(61 * e);
-    show(10 + sec); // 14:02:10 → 14:03:11
-    gauge.style.transform = `scaleX(${e})`;
-    gaugeTxt.textContent = `+${Math.floor(sec / 60)}:${pad(sec % 60)}`;
-  }
-
-  let next = 0;
-  let raf = 0;
+  const stepEl = el.querySelector('.bi-step');
+  const bar = el.querySelector('.bi-bar i');
   let done = false;
-  // 휴대폰은 3D 거리를 만드는 몇 초 동안 화면이 멈춘다. 그동안 시계를 돌리면 풀리자마자 한 번에 끝나므로
-  // 준비될 때까지 기다렸다가 시작하고, 한 화면에 흐르는 시간도 최대 1/10초로 묶는다.
-  let ready = !!window.__streetReady || AT != null;
-  const goReady = () => {
-    ready = true;
-  };
-  window.addEventListener('street-ready', goReady, { once: true });
-  const readyTimer = setTimeout(goReady, 10000);
-  let started = false;
-  let last = 0;
-  let clock = 0;
-  const midEl = el.querySelector('.vf-top .mid');
-  add('wait');
-  function tick(now) {
-    if (done) return;
-    if (!ready) {
-      last = now;
-      raf = requestAnimationFrame(tick);
-      return;
+  let lastName = '';
+  window.addEventListener('intro-progress', (e) => {
+    const d = e.detail || {};
+    if (d.name && d.name !== lastName) {
+      lastName = d.name;
+      stepEl.textContent = d.name;
     }
-    if (!started) {
-      started = true;
-      clearTimeout(readyTimer);
-      el.classList.remove('wait');
-      if (midEl) midEl.lastChild.textContent = '촬영 중';
-      last = now;
-    }
-    clock += Math.min(0.1, Math.max(0, (now - last) / 1000));
-    last = now;
-    const t = AT != null ? AT : clock;
-    const lastStep = AT != null ? steps.length - 1 : steps.length; // 점검 모드는 끝내지 않고 그 순간에 멈춤
-    while (next < lastStep && steps[next][0] <= t) steps[next++][1]();
-    if (counting) setCount(Math.min(1, Math.max(0, (t - C0) / (C1 - C0))));
-    if (AT != null) return;
-    raf = requestAnimationFrame(tick);
-  }
+    bar.style.transform = `scaleX(${Math.max(0, Math.min(1, d.p || 0))})`;
+  });
 
-  function end(fast) {
+  function finish() {
     if (done) return;
     done = true;
-    cancelAnimationFrame(raf);
-    el.style.display = 'block'; // intro-on 을 떼도 마지막 페이드는 보이게
-    el.style.pointerEvents = 'none';
-    root.classList.remove('intro-on'); // 스크롤·클릭 바로 풀기
-    if (fast) add('out');
-    setTimeout(() => el.remove(), fast ? 220 : 60);
+    root.classList.add('intro-reveal');
+    root.classList.remove('intro-on'); // 스크롤·클릭 풀고, 제목·메뉴가 한 줄씩 올라옴
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 600);
+    setTimeout(() => root.classList.remove('intro-reveal'), 2200);
     window.removeEventListener('keydown', onKey);
     window.removeEventListener('wheel', skip);
+    window.removeEventListener('pointerdown', skip);
   }
-  const skip = () => end(true);
+  function skip() {
+    if (done) return;
+    window.dispatchEvent(new Event('intro-skip')); // 3D 는 다 지어진 모습으로
+    finish();
+  }
   const onKey = (e) => {
     if (e.key === 'Escape') skip();
   };
-  el.addEventListener('pointerdown', skip);
-  el.querySelector('.vf-skip').addEventListener('click', skip);
+  window.addEventListener('intro-done', finish);
+  el.querySelector('.bi-skip').addEventListener('click', skip);
   window.addEventListener('keydown', onKey);
   window.addEventListener('wheel', skip, { passive: true });
-  // 인트로 중 움직임 멈춤을 켜거나 다른 탭으로 가면 바로 끝
-  document.addEventListener('click', (e) => e.target.closest && e.target.closest('#pauseBtn') && skip());
+  window.addEventListener('pointerdown', skip); // 화면을 누르면(스크롤하려 하면) 바로 본문으로
   document.addEventListener('visibilitychange', () => document.hidden && skip());
-
-  show(10);
-  add('boot'); // 기다리는 동안에도 뷰파인더는 열려 있게
-  raf = requestAnimationFrame(tick);
+  setTimeout(finish, 15000); // 3D 를 못 그리는 등 알림이 안 오면
 })();
