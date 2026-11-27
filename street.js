@@ -39,7 +39,13 @@
     };
     im.src = src;
   }
+  function streetReady() {
+    if (window.__streetReady) return;
+    window.__streetReady = true;
+    window.dispatchEvent(new Event('street-ready'));
+  }
   function useStills() {
+    streetReady();
     stillOn = true;
     document.body.classList.add('no3d');
     showStill();
@@ -2168,6 +2174,7 @@
     }
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
+    streetReady(); // 첫 화면을 그렸음 → 인트로가 이때부터 재생
   }
   requestAnimationFrame(frame);
 })();

@@ -77,16 +77,41 @@
     gaugeTxt.textContent = `+${Math.floor(sec / 60)}:${pad(sec % 60)}`;
   }
 
-  let t0 = 0;
   let next = 0;
   let raf = 0;
   let done = false;
+  // 휴대폰은 3D 거리를 만드는 몇 초 동안 화면이 멈춘다. 그동안 시계를 돌리면 풀리자마자 한 번에 끝나므로
+  // 준비될 때까지 기다렸다가 시작하고, 한 화면에 흐르는 시간도 최대 1/10초로 묶는다.
+  let ready = !!window.__streetReady || AT != null;
+  const goReady = () => {
+    ready = true;
+  };
+  window.addEventListener('street-ready', goReady, { once: true });
+  const readyTimer = setTimeout(goReady, 10000);
+  let started = false;
+  let last = 0;
+  let clock = 0;
+  const midEl = el.querySelector('.vf-top .mid');
+  add('wait');
   function tick(now) {
     if (done) return;
-    if (!t0) t0 = now;
-    const t = AT != null ? AT : (now - t0) / 1000;
-    const last = AT != null ? steps.length - 1 : steps.length; // 점검 모드는 끝내지 않고 그 순간에 멈춤
-    while (next < last && steps[next][0] <= t) steps[next++][1]();
+    if (!ready) {
+      last = now;
+      raf = requestAnimationFrame(tick);
+      return;
+    }
+    if (!started) {
+      started = true;
+      clearTimeout(readyTimer);
+      el.classList.remove('wait');
+      if (midEl) midEl.lastChild.textContent = '촬영 중';
+      last = now;
+    }
+    clock += Math.min(0.1, Math.max(0, (now - last) / 1000));
+    last = now;
+    const t = AT != null ? AT : clock;
+    const lastStep = AT != null ? steps.length - 1 : steps.length; // 점검 모드는 끝내지 않고 그 순간에 멈춤
+    while (next < lastStep && steps[next][0] <= t) steps[next++][1]();
     if (counting) setCount(Math.min(1, Math.max(0, (t - C0) / (C1 - C0))));
     if (AT != null) return;
     raf = requestAnimationFrame(tick);
@@ -117,5 +142,6 @@
   document.addEventListener('visibilitychange', () => document.hidden && skip());
 
   show(10);
+  add('boot'); // 기다리는 동안에도 뷰파인더는 열려 있게
   raf = requestAnimationFrame(tick);
 })();

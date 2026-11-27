@@ -361,6 +361,10 @@
   .vf-af { position: absolute; left: 50%; top: 44%; width: 136px; height: 104px; margin: -52px 0 0 -68px; color: #facc15; will-change: transform; }
   .vf-af svg { width: 100%; height: 100%; display: block; overflow: visible; }
   #vfIntro.focus .vf-af { animation: vfFocus 0.45s ease-out; }
+  #vfIntro.wait .vf-af { animation: vfSearch 1.1s ease-in-out infinite; }
+  @keyframes vfSearch { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.07); opacity: 0.6; } }
+  #vfIntro.wait .vf-rec { animation: vfBlink 1s steps(2) infinite; }
+  @keyframes vfBlink { 50% { opacity: 0.2; } }
   #vfIntro.lock .vf-af { color: #22c55e; }
   @keyframes vfFocus { 0% { transform: scale(1.12); } 55% { transform: scale(0.94); } 100% { transform: scale(1); } }
   .vf-bottom { position: absolute; left: 0; right: 0; bottom: calc(100px + var(--safe-b)); display: flex; flex-direction: column; align-items: center; gap: 14px; }
@@ -396,6 +400,7 @@
     .vf-top { left: calc(60px + var(--safe-l)); right: calc(60px + var(--safe-r)); }
     .vf-top { font-size: 12px; top: calc(26px + var(--safe-t)); }
     .vf-top .mid { display: none; }
+    #vfIntro.wait .vf-top .mid { display: inline-flex; position: absolute; left: 50%; top: calc(100% + 10px); transform: translateX(-50%); }
     .vf-bottom { bottom: calc(118px + var(--safe-b)); gap: 12px; }
     .vf-gauge { font-size: 12px; }
     .vf-chips { left: calc(50px + var(--safe-l)); bottom: calc(24px + var(--safe-b)); }
@@ -476,7 +481,7 @@
     <div class="vf-corner br"><svg viewBox="0 0 46 46" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"><path d="M2 30V2h28" /></svg></div>
     <div class="vf-top">
       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>안전신문고 카메라</span>
-      <span class="mid"><i class="vf-rec"></i>촬영 중</span>
+      <span class="mid"><i class="vf-rec"></i>카메라 준비 중</span>
       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>GPS 자동 기록</span>
     </div>
     <div class="vf-af">
