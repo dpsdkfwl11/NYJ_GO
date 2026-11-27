@@ -179,6 +179,7 @@
   .card .fine b { font-weight: 800; }
   .card .fine span { font-size: 14px; }
   .school .card-head b, .school .card .dist { color: var(--school); }
+  .more { display: none; }
 
   /* 장면 번호(넓은 화면) */
   .rail { position: fixed; right: calc(22px + var(--safe-r)); top: 50%; transform: translateY(-50%); z-index: 5; display: flex; flex-direction: column; gap: 2px; font-size: 12px; font-weight: 700; }
@@ -304,16 +305,28 @@
     .tool { padding: 0; width: 44px; }
     .tool .lbl { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
     .shade { background: linear-gradient(rgba(25, 23, 20, 0.1) 12%, rgba(25, 23, 20, 0.82) 52%) !important; opacity: 1 !important; }
+    body:not(.at-hero) .shade { opacity: 0 !important; }
     .hero { align-items: flex-end; padding: 90px calc(18px + var(--safe-r)) calc(48px + var(--safe-b)) calc(18px + var(--safe-l)); }
     .hero-foot { gap: 18px; margin-top: 36px; }
     .hero-foot b { font-size: 22px; }
     .btns .btn { flex: 1 1 auto; }
     .step { align-items: flex-end; padding: 90px calc(12px + var(--safe-r)) calc(16px + var(--safe-b)) calc(12px + var(--safe-l)); }
-    .card { width: 100%; padding-bottom: 16px; opacity: 1; transform: none; }
-    .card-head { padding: 4px 6px 4px 18px; }
-    .card-body { padding: 12px 18px 0; }
-    .card h2 { font-size: 23px; }
-    .card .dist { margin-bottom: 8px; }
+    .card { width: 100%; padding-bottom: 6px; opacity: 1; transform: none; max-height: 62svh; overflow-y: auto; }
+    .card-head { padding: 2px 6px 2px 16px; }
+    .card-body { padding: 8px 16px 0; }
+    .card h2 { font-size: 21px; display: inline; margin-right: 8px; }
+    .card h2 br { display: none; }
+    .card .dist { margin: 0 0 6px; font-size: 14px; }
+    .card p:not(.fine), .card .note { display: none; }
+    .card.open p:not(.fine), .card.open .note { display: block; }
+    .card .fine { padding: 8px 12px; font-size: 14px; margin: 2px 0 4px; }
+    .more {
+      display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+      min-height: 44px; margin: 2px 0 0; border: 0; border-top: 1px solid var(--paper-2); background: transparent;
+      color: var(--ink-2); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    .more svg { width: 16px; height: 16px; transition: transform 0.2s; }
+    .card.open .more svg { transform: rotate(180deg); }
     .card p { font-size: 15px; margin-bottom: 10px; line-height: 1.6; }
     .card .note { font-size: 14px; padding: 10px 12px; margin-top: 10px; }
     .rail { display: none; }
@@ -456,7 +469,7 @@
     <div class="card">
       <div class="card-head"><b>05 어린이보호구역</b><span class="meta">5 / 6<button class="share" type="button" data-share="어린이보호구역" data-text="초등학교 정문 앞 양방향 도로, 평일 08~20시는 주정차 금지입니다."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 3v12M7 8l5-5 5 5" /></svg>공유<span class="sr-only"> — 어린이보호구역 장면</span></button></span></div>
       <div class="card-body">
-        <h2 id="h1-5">초등학교 앞<br />어린이보호구역</h2>
+        <h2 id="h1-5">초등학교 앞 <br />어린이보호구역</h2>
         <span class="dist">초등학교 정문 앞 양방향 도로 · 평일 08~20시</span>
         <p>등하굣길 아이들은 서 있는 차 사이에서 갑자기 길로 나옵니다. 아이 눈높이에서 주차된 승용차는 벽과 같습니다.</p>
         <p class="note"><strong>기준은 표지판입니다</strong> — 어린이보호구역 안에서 초등학교 정문 앞 양방향 도로가 대상입니다. 붉은 노면이나 울타리가 없는 곳도 있으니 어린이보호구역 표지판을 먼저 확인하세요.</p>

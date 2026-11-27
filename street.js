@@ -2081,7 +2081,7 @@
     if (!shiftView() && !DBG) {
       // 모바일(세로 화면)은 좌우가 좁아 잘리므로 카메라를 뒤로 물린다
       const L = st.look;
-      const M = station === 0 || station === 7 ? 1.1 : 1.38;
+      const M = station === 0 || station === 7 ? 1.1 : 1.2;
       tmp.set(L[0] + (tmp.x - L[0]) * M, L[1] + (tmp.y - L[1]) * M, L[2] + (tmp.z - L[2]) * M);
     }
     tmp.x += mouseX * 1.2 * sway + Math.sin(t * 0.22) * 0.7 * sway;
@@ -2097,7 +2097,7 @@
     } else camera.lookAt(camLook);
     if (DBG) camera.clearViewOffset();
     else if (shiftView()) camera.setViewOffset(window.innerWidth, window.innerHeight, -window.innerWidth * 0.15, 0, window.innerWidth, window.innerHeight);
-    else camera.setViewOffset(window.innerWidth, window.innerHeight, 0, window.innerHeight * 0.1, window.innerWidth, window.innerHeight); // 모바일: 카드가 아래를 가리므로 장면을 위로
+    else camera.setViewOffset(window.innerWidth, window.innerHeight, 0, window.innerHeight * -0.03, window.innerWidth, window.innerHeight); // 모바일: 카드가 아래를 가리므로 장면을 위로
 
     // 문제의 차: 새 자리로 미끄러져 들어가 비상등
     carTarget.set(st.car[0], st.car[1], st.car[2]);

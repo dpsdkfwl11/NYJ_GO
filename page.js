@@ -64,6 +64,22 @@
     if (b) share(b.dataset.share, b.dataset.text);
   });
 
+  // ── 모바일: 카드 설명 펼치기/접기 (3D 화면을 가리지 않게 기본은 접힘) ──
+  document.querySelectorAll('.step .card').forEach((card, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'more';
+    b.setAttribute('aria-expanded', 'false');
+    b.innerHTML = '<span>설명 펼치기</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>';
+    card.appendChild(b);
+    b.addEventListener('click', () => {
+      const open = !card.classList.contains('open');
+      card.classList.toggle('open', open);
+      b.setAttribute('aria-expanded', String(open));
+      b.querySelector('span').textContent = open ? '설명 접기' : '설명 펼치기';
+    });
+  });
+
   // ── 움직임 멈춤 (자동으로 움직이는 화면을 멈출 수 있게) ──
   const pauseBtn = $('pauseBtn');
   function setPaused(v) {
