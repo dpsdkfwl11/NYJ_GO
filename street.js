@@ -955,10 +955,28 @@
     }
     return g;
   }
-  // 소화전 주변 주정차금지
-  signPost(-34.6, 9.55, -0.7, 2.7, [{ r: 0.32, tex: noParkTex, y: 2.42 }, { w: 0.64, h: 0.22, tex: subPlate('소방시설 주변'), y: 1.93 }]);
-  // 소화전 표지(낮은 기둥)
-  signPost(-28.85, 7.2, 0, 1.55, [{ w: 0.44, h: 0.2, tex: subPlate('소화전', '#c92a24', '#ffffff'), y: 1.38 }], 0.03);
+  // 소방용수 표지판(빨간 원형) — 빨간 연석이 없는 곳에서는 이 표지판으로 소화전 자리를 안다
+  const fireWaterTex = ctex(256, 256, (c) => {
+    c.clearRect(0, 0, 256, 256);
+    c.fillStyle = '#ffffff';
+    c.beginPath();
+    c.arc(128, 128, 127, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = '#d0222a';
+    c.beginPath();
+    c.arc(128, 128, 116, 0, Math.PI * 2);
+    c.fill();
+    c.strokeStyle = '#ffffff';
+    c.lineWidth = 4;
+    c.beginPath();
+    c.arc(128, 128, 104, 0, Math.PI * 2);
+    c.stroke();
+    textCanvas(c, '소방', 66, '#ffffff', 800, 128, 98);
+    textCanvas(c, '용수', 66, '#ffffff', 800, 128, 166);
+  });
+  fireWaterTex.center.set(0.5, 0.5);
+  fireWaterTex.rotation = Math.PI / 2; // 둥근 판(원기둥 윗면)에 붙이면 90도 돌아가므로 되돌림
+  signPost(-28.7, 7.05, -0.35, 1.85, [{ r: 0.27, tex: fireWaterTex, y: 1.66 }], 0.035);
   // 교차로 도로명판
   signPost(-7.7, 9.6, 0, 3.3, [{
     w: 1.3, h: 0.44, y: 3.05,

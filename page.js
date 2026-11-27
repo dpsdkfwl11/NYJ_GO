@@ -40,6 +40,23 @@
     hashTimer = setTimeout(syncHash, 250);
   }, { passive: true });
 
+  // ── 안전신문고: 휴대폰은 앱 스토어로 (홈페이지보다 앱 신고가 실제로 쓰이므로) ──
+  const ua = navigator.userAgent || '';
+  const isAndroid = /Android/i.test(ua);
+  const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const STORE = isAndroid ? 'https://play.google.com/store/apps/details?id=kr.go.safepeople' : isIOS ? 'https://apps.apple.com/kr/app/id963555704' : '';
+  if (STORE) {
+    document.querySelectorAll('a[href^="https://www.safetyreport.go.kr"]').forEach((a) => {
+      a.href = STORE;
+      a.removeAttribute('target');
+      const lbl = a.querySelector('.go-label');
+      if (lbl) lbl.textContent = '안전신문고 앱 받기';
+      const sr = a.querySelector('.sr-only');
+      if (sr) sr.textContent = isAndroid ? '(구글 플레이)' : '(앱 스토어)';
+      a.setAttribute('aria-label', `안전신문고 앱 받기 ${isAndroid ? '(구글 플레이)' : '(앱 스토어)'}`);
+    });
+  }
+
   // ── 장면 공유 ──
   async function share(id, text) {
     const url = `${location.origin === 'null' ? location.href.split('#')[0] : location.origin + location.pathname}#${encodeURIComponent(id)}`;
